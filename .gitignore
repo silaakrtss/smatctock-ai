@@ -1,0 +1,10 @@
+logs_llm/
+vectors.db
+vectors.db-shm
+vectors.db-wal
+
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
