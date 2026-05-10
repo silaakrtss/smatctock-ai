@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartStock AI</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+            display: flex;
+            justify-content: center;
+        }
+
+        .chat-box {
+            width: 400px;
+            margin-top: 50px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 75%;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px;
+            width: 20%;
+        }
+
+        .user {
+            text-align: right;
+            color: blue;
+        }
+
+        .bot {
+            text-align: left;
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-box">
+    <h3>SmartStock AI Chat</h3>
+
+    <div id="messages"></div>
+
+    <input id="input" placeholder="Mesaj yaz...">
+    <button onclick="send()">Gönder</button>
+</div>
+
+<script>
+async function send() {
+    let input = document.getElementById("input");
+    let message = input.value;
+
+    if (!message) return;
+
+    let messages = document.getElementById("messages");
+
+    messages.innerHTML += "<div class='user'>" + message + "</div>";
+
+    let res = await fetch("http://127.0.0.1:8000/chat?message=" + encodeURIComponent(message));
+    let data = await res.json();
+
+    messages.innerHTML += "<div class='bot'>" + data.answer + "</div>";
+
+    input.value = "";
+}
+</script>
+
+</body>
+</html>
