@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% set active = 'chat' %}
+{% block title %}Sohbet · Kooperatif Ajanı{% endblock %}
+
+{% block main %}
+<section class="grid lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2 bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
+       x-data='{
+         messages: [],
+         draft: "",
+         loading: false,
+         async send() {
+           if (!this.draft.trim() || this.loading) return;
+           const userText = this.draft.trim();
+           this.messages.push({ role: "user", content: userText });
+           this.draft = "";
+           this.loading = true;
+           try {
+             const res = await fetch("/ai-chat", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({ message: userText }),
+             });
+             const data = await res.json();
+             if (res.ok) {
+               this.messages.push({ role: "assistant", content: data.answer });
+             } else {
+               this.messages.push({ role: "assistant", content: data.detail || "Bir hata oluştu." });
+             }
+           } catch (e) {
+             this.messages.push({ role: "assistant", content: "Bağlantı hatası." });
+           } finally {
+             this.loading = false;
+           }
+         }
+       }'>
+
+    <h1 class="font-display text-2xl text-harvest-700 mb-4">Operasyon Asistanı</h1>
+    <p class="text-sm text-harvest-600 mb-4">
+      Stok, sipariş veya kargo sorularını sor. Yapay zekâ asistan gerekli araçları
+      çağırıp Türkçe yanıt verir.
+    </p>
+
+    <div class="flex flex-col gap-1 min-h-64 max-h-[28rem] overflow-y-auto mb-4">
+      <template x-for="(msg, idx) in messages" :key="idx">
+        <div class="chat-message" :class="msg.role">
+          <span x-text="msg.content"></span>
+        </div>
+      </template>
+      <template x-if="loading">
+        <div class="chat-message assistant text-harvest-500 italic">yazıyor…</div>
+      </template>
+    </div>
+
+    <form @submit.prevent="send" class="flex gap-2">
+      <input
+        type="text"
+        x-model="draft"
+        placeholder="Domates stoğu nedir?"
+        class="flex-1 px-4 py-3 border border-harvest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-harvest-500">
+      <button
+        type="submit"
+        :disabled="loading"
+        class="px-5 py-3 bg-ember-500 hover:bg-ember-600 disabled:opacity-50 text-white rounded-xl font-medium">
+        Gönder
+      </button>
+    </form>
+  </div>
+
+  <aside class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+    <h2 class="font-display text-lg text-harvest-700 mb-3">Örnek Sorular</h2>
+    <ul class="text-sm space-y-2">
+      <li>• "Düşük stoklu ürünleri listele"</li>
+      <li>• "101 numaralı siparişin durumu nedir?"</li>
+      <li>• "Bugünkü hazırlanacak siparişleri göster"</li>
+      <li>• "Domates için 50 adet tedarik taslağı oluştur"</li>
+      <li>• "Gecikmiş kargolar var mı?"</li>
+    </ul>
+  </aside>
+
+</section>
+{% endblock %}

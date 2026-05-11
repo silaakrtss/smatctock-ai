@@ -1,0 +1,53 @@
+/* Tailwind CDN üstüne ek özelleştirmeler (ADR-0010 § custom aesthetic) */
+
+.notification-card {
+  border-left: 4px solid #d96e2a;
+  background: linear-gradient(90deg, #fbf7ec 0%, #f4ecd0 100%);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  animation: slide-in 0.25s ease-out;
+}
+
+.notification-card[data-status="failed"] {
+  border-left-color: #b91c1c;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.chat-message {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.chat-message.user {
+  background: #e8efd6;
+  align-self: flex-end;
+  margin-left: auto;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.chat-message.assistant {
+  background: #ffffff;
+  border: 1px solid #cfddae;
+  align-self: flex-start;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-pill.preparing { background: #f4ecd0; color: #46591f; }
+.status-pill.in_shipping { background: #fde4cf; color: #b75a1f; }
+.status-pill.delivered { background: #cfddae; color: #2a3614; }
+.status-pill.cancelled { background: #e5e7eb; color: #4b5563; }

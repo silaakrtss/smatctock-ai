@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Operasyon Paneli · Kooperatif Ajanı{% endblock %}
+
+{% block main %}
+<section class="space-y-6"
+         hx-ext="sse"
+         sse-connect="/notifications/stream"
+         x-data='{
+           notifications: [],
+           init() {
+             const source = new EventSource("/notifications/stream");
+             source.onmessage = (e) => {
+               try {
+                 const payload = JSON.parse(e.data);
+                 this.notifications.unshift(payload);
+                 if (this.notifications.length > 20) this.notifications.length = 20;
+               } catch (err) {}
+             };
+           }
+         }'>
+
+  <div class="grid lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-2 grid md:grid-cols-2 gap-6">
+
+      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+        <h2 class="font-display text-lg text-harvest-700 mb-3">Ürünler</h2>
+        <div hx-get="/products" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
+          <p class="text-sm text-harvest-500 italic">Yükleniyor…</p>
+        </div>
+      </article>
+
+      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+        <h2 class="font-display text-lg text-harvest-700 mb-3">Siparişler</h2>
+        <div hx-get="/orders" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
+          <p class="text-sm text-harvest-500 italic">Yükleniyor…</p>
+        </div>
+      </article>
+    </div>
+
+    <aside class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+      <h2 class="font-display text-lg text-harvest-700 mb-3">🔔 Canlı Bildirimler</h2>
+      <p class="text-xs text-harvest-500 mb-3">SSE bağlantısı açık.</p>
+
+      <div class="space-y-1">
+        <template x-for="n in notifications" :key="n.id">
+          <div class="notification-card" :data-status="n.status">
+            <div class="font-semibold text-harvest-700" x-text="n.subject"></div>
+            <div class="text-sm text-harvest-600" x-text="n.body"></div>
+            <div class="text-xs text-harvest-500 mt-1" x-text="n.channel + ' · ' + n.recipient"></div>
+          </div>
+        </template>
+        <template x-if="notifications.length === 0">
+          <p class="text-sm text-harvest-500 italic">Henüz bildirim yok.</p>
+        </template>
+      </div>
+    </aside>
+  </div>
+
+</section>
+{% endblock %}
