@@ -36,6 +36,25 @@ class SqlAlchemyOrderRepository(OrderRepository):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_filtered(
+        self,
+        *,
+        status: str | None = None,
+        day: datetime | None = None,
+        customer_name: str | None = None,
+    ) -> list[Order]:
+        stmt = select(Order)
+        if status is not None:
+            stmt = stmt.where(orders_table.c.status == status)
+        if day is not None:
+            start, end = _day_bounds(day)
+            stmt = stmt.where(orders_table.c.created_at >= start)
+            stmt = stmt.where(orders_table.c.created_at < end)
+        if customer_name is not None:
+            stmt = stmt.where(orders_table.c.customer_name == customer_name)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
 
 def _day_bounds(reference: datetime) -> tuple[datetime, datetime]:
     start = datetime.combine(reference.date(), time.min, tzinfo=reference.tzinfo)

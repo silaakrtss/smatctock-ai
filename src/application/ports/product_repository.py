@@ -15,3 +15,6 @@ class ProductRepository(ABC):
 
     @abstractmethod
     async def list_below_threshold(self) -> list[Product]: ...
+
+    @abstractmethod
+    async def get_by_name(self, name: str) -> Product | None: ...

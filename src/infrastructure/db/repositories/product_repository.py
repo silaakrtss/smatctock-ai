@@ -25,6 +25,11 @@ class SqlAlchemyProductRepository(ProductRepository):
     async def save(self, product: Product) -> None:
         await self.session.merge(product)
 
+    async def get_by_name(self, name: str) -> Product | None:
+        stmt = select(Product).where(products_table.c.name == name)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def list_below_threshold(self) -> list[Product]:
         join = products_table.join(
             stock_thresholds_table,
