@@ -6,43 +6,25 @@
 <section class="grid lg:grid-cols-3 gap-6">
 
   <div class="lg:col-span-2 bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
-       x-data='{
-         messages: [],
-         draft: "",
-         loading: false,
-         async send() {
-           if (!this.draft.trim() || this.loading) return;
-           const userText = this.draft.trim();
-           this.messages.push({ role: "user", content: userText });
-           this.draft = "";
-           this.loading = true;
-           try {
-             const res = await fetch("/ai-chat", {
-               method: "POST",
-               headers: { "Content-Type": "application/json" },
-               body: JSON.stringify({ message: userText }),
-             });
-             const data = await res.json();
-             if (res.ok) {
-               this.messages.push({ role: "assistant", content: data.answer });
-             } else {
-               this.messages.push({ role: "assistant", content: data.detail || "Bir hata oluştu." });
-             }
-           } catch (e) {
-             this.messages.push({ role: "assistant", content: "Bağlantı hatası." });
-           } finally {
-             this.loading = false;
-           }
-         }
-       }'>
+       x-data="chatPanel()"
+       x-init="restore()">
 
-    <h1 class="font-display text-2xl text-harvest-700 mb-4">Operasyon Asistanı</h1>
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="font-display text-2xl text-harvest-700">Operasyon Asistanı</h1>
+      <button type="button"
+              @click="clearHistory()"
+              x-show="messages.length > 0"
+              class="text-xs text-harvest-500 hover:text-ember-600 underline">
+        Geçmişi temizle
+      </button>
+    </div>
+
     <p class="text-sm text-harvest-600 mb-4">
       Stok, sipariş veya kargo sorularını sor. Yapay zekâ asistan gerekli araçları
       çağırıp Türkçe yanıt verir.
     </p>
 
-    <div class="flex flex-col gap-1 min-h-64 max-h-[28rem] overflow-y-auto mb-4">
+    <div class="flex flex-col gap-1 min-h-64 max-h-[28rem] overflow-y-auto mb-4" x-ref="scroll">
       <template x-for="(msg, idx) in messages" :key="idx">
         <div class="chat-message" :class="msg.role">
           <template x-if="msg.role === 'assistant'">
@@ -85,4 +67,71 @@
   </aside>
 
 </section>
+
+<script>
+  const CHAT_STORAGE_KEY = "kooperatif.chat.messages.v1";
+
+  function chatPanel() {
+    return {
+      messages: [],
+      draft: "",
+      loading: false,
+
+      restore() {
+        try {
+          const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+          if (raw) this.messages = JSON.parse(raw);
+        } catch (err) { /* sessiz */ }
+        this.$nextTick(() => this.scrollToBottom());
+      },
+
+      persist() {
+        try {
+          sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(this.messages));
+        } catch (err) { /* sessiz */ }
+      },
+
+      scrollToBottom() {
+        const el = this.$refs.scroll;
+        if (el) el.scrollTop = el.scrollHeight;
+      },
+
+      append(role, content) {
+        this.messages.push({ role, content });
+        this.persist();
+        this.$nextTick(() => this.scrollToBottom());
+      },
+
+      clearHistory() {
+        this.messages = [];
+        sessionStorage.removeItem(CHAT_STORAGE_KEY);
+      },
+
+      async send() {
+        const userText = this.draft.trim();
+        if (!userText || this.loading) return;
+        this.append("user", userText);
+        this.draft = "";
+        this.loading = true;
+        try {
+          const res = await fetch("/ai-chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: userText }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.append("assistant", data.answer);
+          } else {
+            this.append("assistant", data.detail || "Bir hata oluştu.");
+          }
+        } catch (err) {
+          this.append("assistant", "Bağlantı hatası.");
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+</script>
 {% endblock %}
