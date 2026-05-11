@@ -32,11 +32,28 @@
         </ul>
       </article>
 
-      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
+               x-data="orderList()" x-init="load()">
         <h2 class="font-display text-lg text-harvest-700 mb-3">Siparişler</h2>
-        <div hx-get="/orders" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
-          <p class="text-sm text-harvest-500 italic">Yükleniyor…</p>
-        </div>
+
+        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor…</p>
+        <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
+
+        <ul class="divide-y divide-harvest-100" x-show="!loading && !error">
+          <template x-for="o in orders" :key="o.id">
+            <li class="py-2 flex justify-between items-center text-sm">
+              <span class="text-harvest-700">
+                <span class="text-harvest-500">#</span><span x-text="o.id"></span>
+                · <span x-text="o.customer_name"></span>
+              </span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-harvest-50 text-harvest-700"
+                    x-text="statusLabel(o.status)"></span>
+            </li>
+          </template>
+          <template x-if="!loading && !error && orders.length === 0">
+            <li class="py-2 text-sm text-harvest-500 italic">Sipariş yok.</li>
+          </template>
+        </ul>
       </article>
     </div>
 
@@ -64,6 +81,13 @@
 </section>
 
 <script>
+  const ORDER_STATUS_LABELS = {
+    preparing: "Hazırlanıyor",
+    in_shipping: "Kargoda",
+    delivered: "Teslim edildi",
+    cancelled: "İptal",
+  };
+
   function productList() {
     return {
       products: [],
@@ -76,6 +100,28 @@
           this.products = await res.json();
         } catch (err) {
           this.error = "Ürünler yüklenemedi.";
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+
+  function orderList() {
+    return {
+      orders: [],
+      loading: true,
+      error: "",
+      statusLabel(value) {
+        return ORDER_STATUS_LABELS[value] || value;
+      },
+      async load() {
+        try {
+          const res = await fetch("/orders");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.orders = await res.json();
+        } catch (err) {
+          this.error = "Siparişler yüklenemedi.";
         } finally {
           this.loading = false;
         }
