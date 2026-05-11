@@ -7,7 +7,8 @@
 
   <div class="lg:col-span-2 bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
        x-data="chatPanel()"
-       x-init="restore()">
+       x-init="restore()"
+       @beforeunload.window="destroy()">
 
     <div class="flex items-center justify-between mb-4">
       <h1 class="font-display text-2xl text-harvest-700">Operasyon Asistanı</h1>
@@ -70,19 +71,69 @@
 
 <script>
   const CHAT_STORAGE_KEY = "kooperatif.chat.messages.v1";
+  const PENDING_STORAGE_KEY = "kooperatif.chat.pending.v1";
 
   function chatPanel() {
     return {
       messages: [],
       draft: "",
       loading: false,
+      pendingId: null,
+      eventSource: null,
 
       restore() {
         try {
           const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
           if (raw) this.messages = JSON.parse(raw);
+          const pending = sessionStorage.getItem(PENDING_STORAGE_KEY);
+          if (pending) {
+            this.pendingId = pending;
+            this.loading = true;
+            this.checkPendingReply(pending);
+          }
         } catch (err) { /* sessiz */ }
+        this.openEventSource();
         this.$nextTick(() => this.scrollToBottom());
+      },
+
+      async checkPendingReply(messageId) {
+        try {
+          const res = await fetch("/ai-chat/replies/" + encodeURIComponent(messageId));
+          if (res.ok) {
+            const data = await res.json();
+            this.handleReply({ message_id: messageId, content: data.answer });
+          }
+        } catch (err) { /* sessiz — SSE de bekliyor */ }
+      },
+
+      destroy() {
+        if (this.eventSource) {
+          this.eventSource.close();
+          this.eventSource = null;
+        }
+      },
+
+      openEventSource() {
+        if (this.eventSource) return;
+        const src = new EventSource("/notifications/stream");
+        src.onmessage = (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            if (payload.type === "chat_reply") this.handleReply(payload);
+          } catch (err) { /* sessiz */ }
+        };
+        src.onerror = () => { /* tarayıcı otomatik reconnect dener */ };
+        this.eventSource = src;
+      },
+
+      handleReply(payload) {
+        if (this.hasMessage(payload.message_id)) return;
+        this.append("assistant", payload.content, payload.message_id);
+        if (this.pendingId === payload.message_id) this.clearPending();
+      },
+
+      hasMessage(messageId) {
+        return this.messages.some(m => m.message_id === messageId);
       },
 
       persist() {
@@ -91,13 +142,25 @@
         } catch (err) { /* sessiz */ }
       },
 
+      setPending(messageId) {
+        this.pendingId = messageId;
+        this.loading = true;
+        sessionStorage.setItem(PENDING_STORAGE_KEY, messageId);
+      },
+
+      clearPending() {
+        this.pendingId = null;
+        this.loading = false;
+        sessionStorage.removeItem(PENDING_STORAGE_KEY);
+      },
+
       scrollToBottom() {
         const el = this.$refs.scroll;
         if (el) el.scrollTop = el.scrollHeight;
       },
 
-      append(role, content) {
-        this.messages.push({ role, content });
+      append(role, content, messageId) {
+        this.messages.push({ role, content, message_id: messageId });
         this.persist();
         this.$nextTick(() => this.scrollToBottom());
       },
@@ -105,30 +168,31 @@
       clearHistory() {
         this.messages = [];
         sessionStorage.removeItem(CHAT_STORAGE_KEY);
+        this.clearPending();
       },
 
       async send() {
         const userText = this.draft.trim();
         if (!userText || this.loading) return;
+        const messageId = crypto.randomUUID();
         this.append("user", userText);
         this.draft = "";
-        this.loading = true;
+        this.setPending(messageId);
         try {
           const res = await fetch("/ai-chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: userText }),
+            body: JSON.stringify({ message: userText, message_id: messageId }),
           });
           const data = await res.json();
           if (res.ok) {
-            this.append("assistant", data.answer);
+            this.handleReply({ message_id: messageId, content: data.answer });
           } else {
-            this.append("assistant", data.detail || "Bir hata oluştu.");
+            this.append("assistant", data.detail || "Bir hata oluştu.", messageId);
+            this.clearPending();
           }
         } catch (err) {
-          this.append("assistant", "Bağlantı hatası.");
-        } finally {
-          this.loading = false;
+          /* sayfa değişimi veya ağ hatası — SSE üzerinden cevap yine gelebilir */
         }
       },
     };

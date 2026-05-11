@@ -10,6 +10,7 @@ from src.domain.shipping.shipment import Shipment
 
 class AiChatRequest(BaseModel):
     message: str = Field(min_length=1)
+    message_id: str | None = None
 
 
 class AiChatResponse(BaseModel):

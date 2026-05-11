@@ -9,6 +9,7 @@ from src.agent.loop import AgentLoop
 from src.agent.prompts.loader import PromptLoader
 from src.agent.tools.dispatcher import ToolDispatcher
 from src.agent.tools.registry import ToolRegistry
+from src.application.ports.chat_reply_cache import ChatReplyCache
 from src.application.ports.llm_client import LLMClient
 from src.application.ports.notifier import Notifier
 from src.application.ports.scheduler import CronTrigger, Scheduler
@@ -33,6 +34,7 @@ class AppContainer:
     sse_hub: SseHub
     telegram_http: httpx.AsyncClient
     prompt_loader: PromptLoader
+    chat_reply_cache: ChatReplyCache
     scheduler: Scheduler | None = field(default=None)
 
     async def build_request_scope(self, session: AsyncSession) -> "RequestScope":
@@ -94,6 +96,10 @@ class AppContainer:
             max_iterations=self.settings.agent_max_tool_iterations,
         )
 
+        from src.infrastructure.notifiers.sse_chat_reply_publisher import (
+            SseChatReplyPublisher,
+        )
+
         return RequestScope(
             session=session,
             stock=stock,
@@ -104,6 +110,8 @@ class AppContainer:
             agent_loop=loop,
             prompt_loader=self.prompt_loader,
             sse_hub=self.sse_hub,
+            chat_reply_publisher=SseChatReplyPublisher(sse_hub=self.sse_hub),
+            chat_reply_cache=self.chat_reply_cache,
         )
 
 
@@ -118,9 +126,15 @@ class RequestScope:
     agent_loop: AgentLoop
     prompt_loader: PromptLoader
     sse_hub: SseHub
+    chat_reply_publisher: Any
+    chat_reply_cache: ChatReplyCache
 
 
 async def build_container(settings: Settings) -> AppContainer:
+    from src.infrastructure.notifiers.in_memory_chat_reply_cache import (
+        InMemoryChatReplyCache,
+    )
+
     configure_mappings()
     engine = build_async_engine(settings.database_url)
     session_factory = build_session_factory(engine)
@@ -135,6 +149,10 @@ async def build_container(settings: Settings) -> AppContainer:
         sse_hub=SseHub(),
         telegram_http=telegram_http,
         prompt_loader=PromptLoader(),
+        chat_reply_cache=InMemoryChatReplyCache(
+            ttl_seconds=settings.chat_reply_cache_ttl_seconds,
+            clock=_utcnow,
+        ),
     )
 
 

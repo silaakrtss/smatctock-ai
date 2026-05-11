@@ -18,6 +18,7 @@ class FrontendNotifier(Notifier):
 
 def _serialize(notification: Notification) -> dict[str, object]:
     return {
+        "type": "notification",
         "id": notification.id,
         "channel": notification.channel.value,
         "recipient": notification.recipient,
