@@ -55,11 +55,17 @@ Hangi alternatifler değerlendirildi, neden elendi?
 
 ## Open items
 
-Henüz uygulanmamış maddeler. Borç kapandıkça buradan **silinir** (yeni
-ADR açılmaz, bu maddeler mevcut kararın gecikmiş uygulamasıdır).
+Henüz uygulanmamış veya tamamlandığında referansla işaretlenmiş maddeler.
+Format (ADR-0012):
 
-- [ ] ...
-- [ ] ...
+- `[x] Madde. *(Fxx, PR #N — kısa açıklama)*` — tamamlandı, referans şart.
+- `[ ] Madde. *(Gerekçe: neden açık)*` — açık, gerekçe şart.
+
+**Silme yalnızca ADR superseded olduğunda.** Aktif ADR'da `[ ]` ve `[x]`
+birbirinin yanında yaşar; geçmiş kaybedilmez.
+
+- [ ] ... *(gerekçe)*
+- [ ] ... *(gerekçe)*
 
 ## Affected areas
 

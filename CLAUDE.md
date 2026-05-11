@@ -87,3 +87,20 @@ Kurulum sonrası:
 - Skill: `architecture-decision` (mimari sorular otomatik tetikler)
 
 Detay: https://github.com/saadettinBerber/adr-kit
+
+### PR yaşam döngüsü disiplini (ADR-0012)
+
+Her PR kapanmadan önce ilgili ADR'ların **Open items** bölümü güncellenir:
+
+- Tamamlanan maddeler `[x] *(Fxx, PR #N — kısa açıklama)*` formatıyla
+  işaretlenir; çıplak `[x]` yasak (referans şart).
+- Açık kalan maddeler `[ ] ... *(gerekçe)*` formatıyla — "düşük öncelik",
+  "production gerekirse", "alternatif tasarım tercih edildi" gibi
+  spesifik gerekçe şart, "TODO" yasak.
+- **Silme yalnızca ADR superseded olduğunda**; aktif ADR'da kapalı
+  maddeler tarihsel kayıt olarak kalır.
+
+AI asistan her commit/PR hazırlığında ilgili ADR'a bakar; refleks haline
+gelmeden açık bırakmaz.
+
+Detay: [ADR-0012](docs/decisions/0012-adr-yasam-dongusu-disiplini.md).
