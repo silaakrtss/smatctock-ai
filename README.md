@@ -37,3 +37,39 @@ uvicorn main:app --reload
 ```
 
 Tarayıcıdan aç: <http://127.0.0.1:8000>
+
+## 5. ADR (Architecture Decision Records)
+
+Mimari kararları `docs/adr/` altında tutuyoruz. Yönetim için [`adr-kit`](https://github.com/saadettinBerber/adr-kit) Claude Code plugin'ini kullanıyoruz.
+
+### Kurulum (her geliştirici bir kez yapar)
+
+Claude Code içinde:
+
+```
+/plugin marketplace add saadettinBerber/adr-kit
+/plugin install adr-kit@adr-kit
+```
+
+### Günlük kullanım
+
+| Komut | Ne yapar |
+|-------|----------|
+| `/adr-kit:adr-init` | `docs/` iskeletini ve ilk index'i oluşturur (proje başında bir kez) |
+| `/adr-kit:adr-new <başlık>` | Yeni ADR dosyası açar, numarayı otomatik verir, index'e satır ekler |
+| `/adr-kit:adr-install-claude-md` | CLAUDE.md'ye ADR disiplin bloğunu ekler |
+
+Ayrıca `architecture-decision` skill'i, mimari konular konuşulduğunda otomatik tetiklenir ve mevcut ADR'ları okuyup cevaba katar.
+
+### Ne zaman ADR yazılır?
+
+Birden fazla modülü etkileyen kararlarda:
+
+- Modül sınırı / paket yapısı değişiklikleri
+- DB, cache, queue seçimi
+- Auth / yetkilendirme modeli
+- API protokolü (REST/gRPC/GraphQL)
+- Cross-cutting konular: logging, error handling, observability
+- Deployment topolojisi
+
+Tek dosyalık bir bugfix veya yerel refactor için ADR gerekmez — commit mesajı yeter.
