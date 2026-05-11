@@ -37,5 +37,11 @@ async def ai_chat(
             status_code=503, detail="LLM servisine ulaşılamadı, lütfen tekrar deneyin."
         ) from exc
 
-    answer = strip_reasoning_blocks(response.content or "")
-    return AiChatResponse(answer=answer or "(yanıt üretilemedi)")
+    answer = strip_reasoning_blocks(response.content or "") or "(yanıt üretilemedi)"
+
+    if request.message_id:
+        await scope.chat_reply_publisher.publish(
+            message_id=request.message_id, content=answer
+        )
+
+    return AiChatResponse(answer=answer)

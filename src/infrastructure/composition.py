@@ -94,6 +94,10 @@ class AppContainer:
             max_iterations=self.settings.agent_max_tool_iterations,
         )
 
+        from src.infrastructure.notifiers.sse_chat_reply_publisher import (
+            SseChatReplyPublisher,
+        )
+
         return RequestScope(
             session=session,
             stock=stock,
@@ -104,6 +108,7 @@ class AppContainer:
             agent_loop=loop,
             prompt_loader=self.prompt_loader,
             sse_hub=self.sse_hub,
+            chat_reply_publisher=SseChatReplyPublisher(sse_hub=self.sse_hub),
         )
 
 
@@ -118,6 +123,7 @@ class RequestScope:
     agent_loop: AgentLoop
     prompt_loader: PromptLoader
     sse_hub: SseHub
+    chat_reply_publisher: Any
 
 
 async def build_container(settings: Settings) -> AppContainer:
