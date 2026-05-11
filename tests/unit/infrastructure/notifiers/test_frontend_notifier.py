@@ -63,5 +63,6 @@ class TestFrontendNotifier:
         stored = await repository.get_by_id(1)
         assert stored is not None
         event = await asyncio.wait_for(subscriber.get(), timeout=0.1)
+        assert event["type"] == "notification"
         assert event["id"] == 1
         assert event["subject"] == "Sipariş kargoda"

@@ -81,6 +81,7 @@
         src.onmessage = (e) => {
           try {
             const payload = JSON.parse(e.data);
+            if (payload.type && payload.type !== "notification") return;
             this.notifications.unshift(payload);
             if (this.notifications.length > 20) this.notifications.length = 20;
           } catch (err) { /* sessiz */ }
