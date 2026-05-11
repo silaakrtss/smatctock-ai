@@ -40,8 +40,19 @@ async def ai_chat(
     answer = strip_reasoning_blocks(response.content or "") or "(yanıt üretilemedi)"
 
     if request.message_id:
+        await scope.chat_reply_cache.set(message_id=request.message_id, content=answer)
         await scope.chat_reply_publisher.publish(
             message_id=request.message_id, content=answer
         )
 
     return AiChatResponse(answer=answer)
+
+
+@router.get("/ai-chat/replies/{message_id}", response_model=AiChatResponse)
+async def get_chat_reply(
+    message_id: str, scope: RequestScope = Depends(get_scope)
+) -> AiChatResponse:
+    content = await scope.chat_reply_cache.get(message_id)
+    if content is None:
+        raise HTTPException(status_code=404, detail="Cevap bulunamadı veya süresi doldu.")
+    return AiChatResponse(answer=content)

@@ -89,10 +89,21 @@
           if (pending) {
             this.pendingId = pending;
             this.loading = true;
+            this.checkPendingReply(pending);
           }
         } catch (err) { /* sessiz */ }
         this.openEventSource();
         this.$nextTick(() => this.scrollToBottom());
+      },
+
+      async checkPendingReply(messageId) {
+        try {
+          const res = await fetch("/ai-chat/replies/" + encodeURIComponent(messageId));
+          if (res.ok) {
+            const data = await res.json();
+            this.handleReply({ message_id: messageId, content: data.answer });
+          }
+        } catch (err) { /* sessiz — SSE de bekliyor */ }
       },
 
       destroy() {

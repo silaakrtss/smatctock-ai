@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     agent_max_tool_iterations: int = Field(default=8)
 
+    chat_reply_cache_ttl_seconds: int = Field(default=300)
+
     manager_recipient: str = Field(default="@manager")
     supplier_recipient: str = Field(default="@tedarik")
 

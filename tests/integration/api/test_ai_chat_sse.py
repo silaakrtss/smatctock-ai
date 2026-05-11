@@ -24,10 +24,12 @@ class StubPromptLoader:
 @pytest.fixture
 def stub_scope():
     publisher = SimpleNamespace(publish=AsyncMock())
+    cache = SimpleNamespace(set=AsyncMock(), get=AsyncMock(return_value=None))
     scope = SimpleNamespace(
         agent_loop=StubAgentLoop("Domates stoğu 8 adet."),
         prompt_loader=StubPromptLoader(),
         chat_reply_publisher=publisher,
+        chat_reply_cache=cache,
     )
 
     async def override():
@@ -35,13 +37,13 @@ def stub_scope():
 
     app.dependency_overrides[get_scope] = override
     try:
-        yield scope, publisher
+        yield scope, publisher, cache
     finally:
         app.dependency_overrides.pop(get_scope, None)
 
 
-def test_ai_chat_publishes_reply_to_sse_when_message_id_given(stub_scope):
-    _scope, publisher = stub_scope
+def test_ai_chat_publishes_and_caches_reply_when_message_id_given(stub_scope):
+    _scope, publisher, cache = stub_scope
     client = TestClient(app)
 
     response = client.post(
@@ -54,13 +56,39 @@ def test_ai_chat_publishes_reply_to_sse_when_message_id_given(stub_scope):
     publisher.publish.assert_awaited_once_with(
         message_id="abc-123", content="Domates stoğu 8 adet."
     )
+    cache.set.assert_awaited_once_with(
+        message_id="abc-123", content="Domates stoğu 8 adet."
+    )
 
 
 def test_ai_chat_skips_publish_when_no_message_id(stub_scope):
-    _scope, publisher = stub_scope
+    _scope, publisher, cache = stub_scope
     client = TestClient(app)
 
     response = client.post("/ai-chat", json={"message": "Domates stoğu?"})
 
     assert response.status_code == 200
     publisher.publish.assert_not_awaited()
+    cache.set.assert_not_awaited()
+
+
+def test_get_chat_reply_returns_cached_content(stub_scope):
+    _scope, _publisher, cache = stub_scope
+    cache.get = AsyncMock(return_value="Önceden üretilmiş cevap.")
+    client = TestClient(app)
+
+    response = client.get("/ai-chat/replies/abc-123")
+
+    assert response.status_code == 200
+    assert response.json()["answer"] == "Önceden üretilmiş cevap."
+    cache.get.assert_awaited_once_with("abc-123")
+
+
+def test_get_chat_reply_returns_404_when_missing(stub_scope):
+    _scope, _publisher, cache = stub_scope
+    cache.get = AsyncMock(return_value=None)
+    client = TestClient(app)
+
+    response = client.get("/ai-chat/replies/unknown")
+
+    assert response.status_code == 404
