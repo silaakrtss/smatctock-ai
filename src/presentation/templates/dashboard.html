@@ -4,21 +4,9 @@
 
 {% block main %}
 <section class="space-y-6"
-         hx-ext="sse"
-         sse-connect="/notifications/stream"
-         x-data='{
-           notifications: [],
-           init() {
-             const source = new EventSource("/notifications/stream");
-             source.onmessage = (e) => {
-               try {
-                 const payload = JSON.parse(e.data);
-                 this.notifications.unshift(payload);
-                 if (this.notifications.length > 20) this.notifications.length = 20;
-               } catch (err) {}
-             };
-           }
-         }'>
+         x-data="notificationStream()"
+         x-init="start()"
+         @beforeunload.window="stop()">
 
   <div class="grid lg:grid-cols-3 gap-6">
 
@@ -41,7 +29,9 @@
 
     <aside class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
       <h2 class="font-display text-lg text-harvest-700 mb-3">🔔 Canlı Bildirimler</h2>
-      <p class="text-xs text-harvest-500 mb-3">SSE bağlantısı açık.</p>
+      <p class="text-xs mb-3" :class="connected ? 'text-harvest-500' : 'text-ember-600'">
+        <span x-text="connected ? 'SSE bağlantısı açık.' : 'Bağlantı kuruluyor…'"></span>
+      </p>
 
       <div class="space-y-1">
         <template x-for="n in notifications" :key="n.id">
@@ -59,4 +49,64 @@
   </div>
 
 </section>
+
+<script>
+  function notificationStream() {
+    return {
+      notifications: [],
+      connected: false,
+      source: null,
+
+      async start() {
+        try {
+          const res = await fetch("/notifications");
+          if (res.ok) this.notifications = await res.json();
+        } catch (err) { /* sessiz */ }
+
+        this.openSource();
+
+        document.addEventListener("visibilitychange", this._onVisibility = () => {
+          if (document.visibilityState === "hidden") {
+            this.stop();
+          } else if (!this.source) {
+            this.openSource();
+          }
+        });
+      },
+
+      openSource() {
+        if (this.source) return;
+        const src = new EventSource("/notifications/stream");
+        this.connected = true;
+        src.onmessage = (e) => {
+          try {
+            const payload = JSON.parse(e.data);
+            this.notifications.unshift(payload);
+            if (this.notifications.length > 20) this.notifications.length = 20;
+          } catch (err) { /* sessiz */ }
+        };
+        src.onerror = () => {
+          this.connected = false;
+          this.stop();
+        };
+        this.source = src;
+      },
+
+      stop() {
+        if (this.source) {
+          this.source.close();
+          this.source = null;
+        }
+        this.connected = false;
+      },
+
+      destroy() {
+        this.stop();
+        if (this._onVisibility) {
+          document.removeEventListener("visibilitychange", this._onVisibility);
+        }
+      },
+    };
+  }
+</script>
 {% endblock %}
