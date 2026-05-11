@@ -3,26 +3,170 @@
 {% block title %}Sipariş Takip · Kooperatif Ajanı{% endblock %}
 
 {% block main %}
-<section class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
-         x-data='{ orderId: "" }'>
-  <h1 class="font-display text-2xl text-harvest-700 mb-4">Sipariş Takip</h1>
-  <p class="text-sm text-harvest-600 mb-4">
-    Sipariş kimliğini gir, kargo ve teslim durumunu öğren.
-  </p>
+<section class="space-y-6"
+         x-data="orderTracking()" x-init="init()">
 
-  <form class="flex gap-2 mb-6" @submit.prevent>
-    <input type="number"
-           x-model="orderId"
-           min="1"
-           placeholder="örn. 101"
-           class="flex-1 px-4 py-3 border border-harvest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-harvest-500">
-    <button type="button"
-            @click="if (orderId) htmx.ajax('GET', '/orders/' + orderId, '#order-result')"
-            class="px-5 py-3 bg-ember-500 hover:bg-ember-600 text-white rounded-xl font-medium">
-      Sorgula
-    </button>
-  </form>
+  <div class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
+    <h1 class="font-display text-2xl text-harvest-700 mb-4">Sipariş Takip</h1>
 
-  <div id="order-result"></div>
+    <div class="mb-4">
+      <p class="text-sm text-harvest-600 mb-2">Belirli bir siparişi sorgula:</p>
+      <form class="flex gap-2" @submit.prevent="lookupOne()">
+        <input type="number"
+               x-model="lookupId"
+               min="1"
+               placeholder="örn. 101"
+               class="flex-1 px-4 py-3 border border-harvest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-harvest-500">
+        <button type="submit"
+                class="px-5 py-3 bg-ember-500 hover:bg-ember-600 text-white rounded-xl font-medium">
+          Sorgula
+        </button>
+      </form>
+
+      <template x-if="lookupResult">
+        <div class="mt-3 p-3 bg-harvest-50 rounded-xl text-sm">
+          <span class="text-harvest-500">#</span><span x-text="lookupResult.id"></span>
+          · <span x-text="lookupResult.customer_name"></span>
+          · <span class="font-medium" x-text="statusLabel(lookupResult.status)"></span>
+        </div>
+      </template>
+      <p class="mt-3 text-sm text-ember-600" x-show="lookupError" x-text="lookupError"></p>
+    </div>
+
+    <div class="border-t border-harvest-100 pt-4">
+      <div class="flex gap-2 mb-4" role="tablist">
+        <template x-for="t in tabs" :key="t.key">
+          <button type="button"
+                  @click="selectTab(t.key)"
+                  :class="tab === t.key
+                    ? 'bg-harvest-700 text-cream-50'
+                    : 'bg-harvest-50 text-harvest-700 hover:bg-harvest-100'"
+                  class="px-4 py-2 rounded-xl text-sm font-medium transition">
+            <span x-text="t.label"></span>
+          </button>
+        </template>
+      </div>
+
+      <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor…</p>
+      <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
+
+      <div x-show="!loading && !error && tab === 'stock'">
+        <ul class="divide-y divide-harvest-100">
+          <template x-for="p in products" :key="p.id">
+            <li class="py-2 flex justify-between text-sm">
+              <span class="text-harvest-700" x-text="p.name"></span>
+              <span class="font-medium" x-text="p.stock"></span>
+            </li>
+          </template>
+          <template x-if="products.length === 0">
+            <li class="py-2 text-sm text-harvest-500 italic">Ürün yok.</li>
+          </template>
+        </ul>
+      </div>
+
+      <div x-show="!loading && !error && tab !== 'stock'">
+        <ul class="divide-y divide-harvest-100">
+          <template x-for="o in orders" :key="o.id">
+            <li class="py-2 flex justify-between items-center text-sm">
+              <span class="text-harvest-700">
+                <span class="text-harvest-500">#</span><span x-text="o.id"></span>
+                · <span x-text="o.customer_name"></span>
+              </span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-harvest-50 text-harvest-700"
+                    x-text="statusLabel(o.status)"></span>
+            </li>
+          </template>
+          <template x-if="orders.length === 0">
+            <li class="py-2 text-sm text-harvest-500 italic">Sipariş yok.</li>
+          </template>
+        </ul>
+      </div>
+    </div>
+  </div>
 </section>
+
+<script>
+  const ORDER_STATUS_LABELS = {
+    preparing: "Hazırlanıyor",
+    in_shipping: "Kargoda",
+    delivered: "Teslim edildi",
+    cancelled: "İptal",
+  };
+
+  const ACTIVE_STATUSES = ["preparing", "in_shipping"];
+
+  function orderTracking() {
+    return {
+      tabs: [
+        { key: "stock", label: "📦 Stok" },
+        { key: "live", label: "🚚 Anlık" },
+        { key: "history", label: "📜 Geçmiş" },
+      ],
+      tab: "stock",
+      products: [],
+      orders: [],
+      loading: false,
+      error: "",
+      lookupId: "",
+      lookupResult: null,
+      lookupError: "",
+
+      statusLabel(value) {
+        return ORDER_STATUS_LABELS[value] || value;
+      },
+
+      init() {
+        this.selectTab("stock");
+      },
+
+      async selectTab(key) {
+        this.tab = key;
+        this.error = "";
+        this.loading = true;
+        try {
+          if (key === "stock") {
+            this.products = await this.fetchJson("/products");
+          } else if (key === "live") {
+            this.orders = await this.fetchActiveOrders();
+          } else if (key === "history") {
+            this.orders = await this.fetchJson("/orders?status=delivered");
+          }
+        } catch (err) {
+          this.error = "Veri yüklenemedi.";
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async fetchJson(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await res.json();
+      },
+
+      async fetchActiveOrders() {
+        const requests = ACTIVE_STATUSES.map(s => this.fetchJson("/orders?status=" + s));
+        const groups = await Promise.all(requests);
+        return groups.flat();
+      },
+
+      async lookupOne() {
+        this.lookupError = "";
+        this.lookupResult = null;
+        if (!this.lookupId) return;
+        try {
+          const res = await fetch("/orders/" + this.lookupId);
+          if (res.status === 404) {
+            this.lookupError = "Sipariş bulunamadı.";
+            return;
+          }
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.lookupResult = await res.json();
+        } catch (err) {
+          this.lookupError = "Sorgu başarısız.";
+        }
+      },
+    };
+  }
+</script>
 {% endblock %}
