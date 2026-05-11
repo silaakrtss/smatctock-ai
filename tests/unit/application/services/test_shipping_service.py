@@ -38,6 +38,12 @@ class FakeShipmentRepository(ShipmentRepository):
     async def save(self, shipment: Shipment) -> None:
         self._items[shipment.id] = shipment
 
+    async def get_by_order(self, order_id: int) -> Shipment | None:
+        for shipment in self._items.values():
+            if shipment.order_id == order_id:
+                return shipment
+        return None
+
 
 class TestFindDelayedShipments:
     async def test_returns_only_dispatched_past_expected(self):
@@ -76,3 +82,19 @@ class TestMarkDelivered:
 
         with pytest.raises(ShipmentNotFoundError):
             await service.mark_delivered(99, at=_dt(2026, 5, 12, 17, 0))
+
+
+class TestGetByOrder:
+    async def test_returns_shipment_for_order(self):
+        shipment = _shipment(id=1, expected=_dt(2026, 5, 12, 18, 0))
+        service = ShippingService(shipments=FakeShipmentRepository([shipment]))
+
+        result = await service.get_by_order(101)
+
+        assert result.id == 1
+
+    async def test_raises_when_no_shipment_for_order(self):
+        service = ShippingService(shipments=FakeShipmentRepository([]))
+
+        with pytest.raises(ShipmentNotFoundError):
+            await service.get_by_order(404)

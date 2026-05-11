@@ -32,6 +32,23 @@ class FakeOrderRepository(OrderRepository):
             if o.status == OrderStatus.PREPARING and o.created_at.date() == target_date
         ]
 
+    async def list_filtered(
+        self,
+        *,
+        status: str | None = None,
+        day: datetime | None = None,
+        customer_name: str | None = None,
+    ) -> list[Order]:
+        results = list(self._items.values())
+        if status is not None:
+            results = [o for o in results if o.status.value == status]
+        if day is not None:
+            results = [o for o in results if o.created_at.date() == day.date()]
+        if customer_name is not None:
+            normalized = customer_name.lower()
+            results = [o for o in results if o.customer_name.lower() == normalized]
+        return results
+
 
 class TestGetOrder:
     async def test_returns_order_when_exists(self):
@@ -99,3 +116,34 @@ class TestTransitionOrderStatus:
 
         with pytest.raises(OrderNotFoundError):
             await service.transition_order_status(99, OrderStatus.IN_SHIPPING)
+
+
+class TestListOrders:
+    async def test_filters_by_status_and_customer(self):
+        target = _dt(2026, 5, 11, 9, 0)
+        orders = [
+            Order(id=1, customer_name="Ali", created_at=target),
+            Order(
+                id=2,
+                customer_name="Ali",
+                created_at=target,
+                status=OrderStatus.IN_SHIPPING,
+            ),
+            Order(id=3, customer_name="Ayşe", created_at=target),
+        ]
+        service = OrderService(orders=FakeOrderRepository(orders))
+
+        result = await service.list(status="preparing", customer_name="Ali")
+
+        assert [o.id for o in result] == [1]
+
+    async def test_no_filters_returns_all(self):
+        orders = [
+            Order(id=1, customer_name="Ali", created_at=_dt(2026, 5, 11, 9, 0)),
+            Order(id=2, customer_name="Ayşe", created_at=_dt(2026, 5, 10, 9, 0)),
+        ]
+        service = OrderService(orders=FakeOrderRepository(orders))
+
+        result = await service.list()
+
+        assert {o.id for o in result} == {1, 2}

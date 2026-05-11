@@ -16,3 +16,12 @@ class OrderRepository(ABC):
 
     @abstractmethod
     async def list_pending_on(self, day: datetime) -> list[Order]: ...
+
+    @abstractmethod
+    async def list_filtered(
+        self,
+        *,
+        status: str | None = None,
+        day: datetime | None = None,
+        customer_name: str | None = None,
+    ) -> list[Order]: ...

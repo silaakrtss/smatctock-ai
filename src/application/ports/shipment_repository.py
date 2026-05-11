@@ -12,3 +12,6 @@ class ShipmentRepository(ABC):
 
     @abstractmethod
     async def save(self, shipment: Shipment) -> None: ...
+
+    @abstractmethod
+    async def get_by_order(self, order_id: int) -> Shipment | None: ...

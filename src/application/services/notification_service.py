@@ -38,6 +38,22 @@ class NotificationService:
         await self.repository.save(notification)
         return notification
 
+    async def notify_customer(
+        self,
+        *,
+        order_id: int,
+        recipient: str,
+        message: str,
+        channel: NotificationChannel,
+    ) -> Notification:
+        draft = NotificationDraft(
+            channel=channel,
+            recipient=recipient,
+            subject=f"Sipariş {order_id} bilgilendirmesi",
+            body=message,
+        )
+        return await self.dispatch(draft)
+
     async def notify_stock_alert(
         self,
         *,

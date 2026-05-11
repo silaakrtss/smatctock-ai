@@ -28,3 +28,12 @@ class OrderService:
         order.transition_to(target)
         await self.orders.save(order)
         return order
+
+    async def list(
+        self,
+        *,
+        status: str | None = None,
+        day: datetime | None = None,
+        customer_name: str | None = None,
+    ) -> list[Order]:
+        return await self.orders.list_filtered(status=status, day=day, customer_name=customer_name)

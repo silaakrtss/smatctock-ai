@@ -25,3 +25,8 @@ class SqlAlchemyShipmentRepository(ShipmentRepository):
 
     async def save(self, shipment: Shipment) -> None:
         await self.session.merge(shipment)
+
+    async def get_by_order(self, order_id: int) -> Shipment | None:
+        stmt = select(Shipment).where(shipments_table.c.order_id == order_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
