@@ -27,6 +27,7 @@ Yeni karar eklendiğinde buraya satır eklenir.
 | [0008](decisions/0008-notifier-telegram-frontend-sse.md) | Notifier — Telegram + Frontend (SSE), paralel fanout | 2026-05-11 |
 | [0009](decisions/0009-agent-loop-tool-calling.md) | Agent loop — basit tool-calling döngüsü, registry dispatcher, RAG yok | 2026-05-11 |
 | [0010](decisions/0010-frontend-htmx-alpine-tailwind.md) | Frontend — HTMX + Alpine.js + Jinja2 + Tailwind CDN, multi-page, custom tasarım | 2026-05-11 |
+| [0011](decisions/0011-tdd-refactor-disiplini.md) | TDD refactor disiplini — zorunlu kapı, yaşayan checklist | 2026-05-11 |
 
 ### Superseded
 
@@ -44,4 +45,4 @@ _Yok._
 
 | Sayfa | Açıklama |
 |-------|----------|
-| _henüz yok_ | |
+| [tdd-refactor-checklist](concepts/tdd-refactor-checklist.md) | TDD refactor adımında bakılacaklar — tam liste + 30 sn hızlı tarama (ADR-0011) |

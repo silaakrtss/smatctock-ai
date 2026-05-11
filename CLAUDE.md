@@ -23,8 +23,28 @@ Skill: coding-standards -->
 
 ### 2. TDD (Test-Driven Development)
 
-<!-- TODO: red-green-refactor disiplini, fake stratejisi, IT zorunluluğu.
-Skill: tdd-workflow, python-testing -->
+Red → Green → **Refactor**. Üçüncü adım atlanmaz; yeşil test tek başına
+"bitti" değildir (ADR-0011).
+
+Refactor anında her tur şu **hızlı tarama**dan geçer (30 sn):
+
+1. Duplikasyon var mı? (kod + bilgi/magic number)
+2. Her isim niyetini söylüyor mu? (`tmp`, `data`, `result` yasak)
+3. Hiçbir fonksiyon 20 satırı, sınıf 200 satırı geçmiyor mu?
+4. Magic number / flag arg / `None` return / yutulmuş exception yok mu?
+5. Test adı davranışı anlatıyor mu? (Arrange uzun mu?)
+
+Detaylı checklist (9 başlık) ve gerekçe:
+[`docs/concepts/tdd-refactor-checklist.md`](docs/concepts/tdd-refactor-checklist.md)
+— [ADR-0011](docs/decisions/0011-tdd-refactor-disiplini.md).
+
+Kurallar:
+- Davranış değişikliği ile refactor **aynı commit'e** girmez
+  (`feat:`/`fix:` vs `refactor:`).
+- Refactor için **yeni test yazılmaz**; yeni davranış yeni Red turudur.
+- Test dosyaları da refactor kapsamındadır.
+
+Skill: `tdd-workflow`, `python-testing`, `clean-code`.
 
 ### 3. Python Patterns
 
