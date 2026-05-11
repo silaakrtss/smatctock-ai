@@ -23,6 +23,10 @@ dependencies = [
     "aiosqlite>=0.20",
     "alembic>=1.13",
     "apscheduler>=4.0.0a5",
+
+    # LLM sağlayıcıları (ADR-0005)
+    "openai>=1.40,<2",
+    "google-genai>=0.3",
 ]
 
 [project.optional-dependencies]
@@ -78,7 +82,7 @@ mypy_path = "src"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["apscheduler.*", "aiosqlite.*"]
+module = ["apscheduler.*", "aiosqlite.*", "google.*", "google.genai.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -145,3 +149,9 @@ name = "SQLAlchemy only in infrastructure/db (ADR-0006)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent", "src.presentation"]
 forbidden_modules = ["sqlalchemy", "aiosqlite"]
+
+[[tool.importlinter.contracts]]
+name = "LLM SDK'ları yalnızca infrastructure/llm'de (ADR-0005)"
+type = "forbidden"
+source_modules = ["src.domain", "src.application", "src.agent", "src.presentation"]
+forbidden_modules = ["openai", "google"]
