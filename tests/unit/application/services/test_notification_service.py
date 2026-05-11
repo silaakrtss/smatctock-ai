@@ -100,6 +100,28 @@ class TestDispatchNotification:
         assert stored.status == NotificationStatus.FAILED
 
 
+class TestNotifyCustomer:
+    async def test_dispatches_message_with_order_subject(self):
+        repository = FakeNotificationRepository()
+        notifier = CollectingNotifier()
+        service = NotificationService(
+            repository=repository,
+            notifier=notifier,
+            clock=lambda: _dt(2026, 5, 11, 8, 0),
+        )
+
+        result = await service.notify_customer(
+            order_id=101,
+            recipient="@ali",
+            message="Siparişiniz yola çıktı.",
+            channel=NotificationChannel.TELEGRAM,
+        )
+
+        assert "101" in result.subject
+        assert result.body == "Siparişiniz yola çıktı."
+        assert result.status == NotificationStatus.SENT
+
+
 class TestNotifyStockAlert:
     async def test_builds_notification_for_low_stock_product(self):
         repository = FakeNotificationRepository()

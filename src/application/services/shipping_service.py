@@ -24,3 +24,9 @@ class ShippingService:
         shipment.mark_delivered(at)
         await self.shipments.save(shipment)
         return shipment
+
+    async def get_by_order(self, order_id: int) -> Shipment:
+        shipment = await self.shipments.get_by_order(order_id)
+        if shipment is None:
+            raise ShipmentNotFoundError(f"No shipment for order {order_id}")
+        return shipment

@@ -1,9 +1,56 @@
+from datetime import datetime, timezone
+
 import pytest
+from src.application.ports.notification_repository import NotificationRepository
+from src.application.ports.notifier import Notifier
 from src.application.ports.product_repository import ProductRepository
 from src.application.ports.stock_threshold_repository import StockThresholdRepository
+from src.application.services.notification_service import NotificationService
 from src.application.services.stock_service import ProductNotFoundError, StockService
+from src.domain.notifications.notification import Notification, NotificationChannel
 from src.domain.products.product import InsufficientStockError, Product
 from src.domain.stock.stock_threshold import StockThreshold
+
+
+def _dt() -> datetime:
+    return datetime(2026, 5, 11, 8, 0, tzinfo=timezone.utc)
+
+
+class _MemoryNotificationRepo(NotificationRepository):
+    def __init__(self) -> None:
+        self.saved: list[Notification] = []
+        self._next = 1
+
+    async def save(self, notification: Notification) -> None:
+        for i, existing in enumerate(self.saved):
+            if existing.id == notification.id:
+                self.saved[i] = notification
+                return
+        self.saved.append(notification)
+
+    async def get_by_id(self, notification_id: int) -> Notification | None:
+        return next((n for n in self.saved if n.id == notification_id), None)
+
+    async def next_id(self) -> int:
+        value = self._next
+        self._next += 1
+        return value
+
+
+class _CollectingNotifier(Notifier):
+    def __init__(self) -> None:
+        self.sent: list[Notification] = []
+
+    async def send(self, notification: Notification) -> None:
+        self.sent.append(notification)
+
+
+def _notification_service() -> NotificationService:
+    return NotificationService(
+        repository=_MemoryNotificationRepo(),
+        notifier=_CollectingNotifier(),
+        clock=_dt,
+    )
 
 
 class FakeProductRepository(ProductRepository):
@@ -12,6 +59,13 @@ class FakeProductRepository(ProductRepository):
 
     async def get_by_id(self, product_id: int) -> Product | None:
         return self._items.get(product_id)
+
+    async def get_by_name(self, name: str) -> Product | None:
+        normalized = name.strip().lower()
+        for product in self._items.values():
+            if product.name.lower() == normalized:
+                return product
+        return None
 
     async def list_all(self) -> list[Product]:
         return list(self._items.values())
@@ -118,3 +172,67 @@ class TestAdjustStock:
 
         with pytest.raises(ValueError, match="delta"):
             await service.adjust_stock(product_id=1, delta=0)
+
+
+class TestGetByName:
+    async def test_finds_product_case_insensitively(self):
+        products = [Product(id=1, name="Domates", stock=40)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository([]),
+        )
+
+        result = await service.get_by_name("domates")
+
+        assert result.id == 1
+
+    async def test_raises_when_unknown(self):
+        service = StockService(
+            products=FakeProductRepository([]),
+            thresholds=FakeThresholdRepository([]),
+        )
+
+        with pytest.raises(ProductNotFoundError):
+            await service.get_by_name("Patlıcan")
+
+
+class TestCreateReorderDraft:
+    async def test_dispatches_supplier_notification(self):
+        products = [Product(id=1, name="Domates", stock=5)]
+        notifications = _notification_service()
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository([]),
+            notifications=notifications,
+            supplier_recipient="@tedarik",
+        )
+
+        notification = await service.create_reorder_draft(product_id=1, quantity=50)
+
+        assert notification.channel == NotificationChannel.TELEGRAM
+        assert notification.recipient == "@tedarik"
+        assert "Domates" in notification.body
+        assert "50" in notification.body
+
+    async def test_rejects_non_positive_quantity(self):
+        products = [Product(id=1, name="Domates", stock=5)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository([]),
+            notifications=_notification_service(),
+            supplier_recipient="@tedarik",
+        )
+
+        with pytest.raises(ValueError, match="quantity"):
+            await service.create_reorder_draft(product_id=1, quantity=0)
+
+    async def test_raises_when_product_missing(self):
+        service = StockService(
+            products=FakeProductRepository([]),
+            thresholds=FakeThresholdRepository([]),
+            notifications=_notification_service(),
+            supplier_recipient="@tedarik",
+        )
+
+        with pytest.raises(ProductNotFoundError):
+            await service.create_reorder_draft(product_id=99, quantity=10)
