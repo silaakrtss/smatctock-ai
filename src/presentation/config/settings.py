@@ -1,5 +1,9 @@
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+LLMProvider = Literal["minimax", "gemini"]
 
 
 class Settings(BaseSettings):
@@ -9,12 +13,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    llm_provider: LLMProvider = Field(default="minimax")
+
     minimax_api_key: str = Field(default="")
     minimax_model: str = Field(default="MiniMax-M2.7")
     minimax_base_url: str = Field(default="https://api.minimax.io/v1")
     minimax_timeout_seconds: int = Field(default=30)
 
-    gemini_api_key: str = Field(default="")
+    google_api_key: str = Field(default="")
     gemini_model: str = Field(default="gemini-2.0-flash")
     gemini_timeout_seconds: int = Field(default=30)
 
