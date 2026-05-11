@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class StockThreshold:
     product_id: int
     min_quantity: int
