@@ -167,17 +167,12 @@ Mevcut `requirements.txt` 36 byte; minimal. Bu ADR ile birlikte:
 
 ## Open items
 
-- [ ] `pyproject.toml` yaz: `[project]`, `[project.dependencies]`,
-      `[project.optional-dependencies.dev]`, `[tool.ruff]`, `[tool.mypy]`,
-      `[tool.pytest.ini_options]`.
-- [ ] `importlinter` config dosyası (`.importlinter`) yaz; katman kontratları:
-      `domain` → hiçbir şeye bağlı değil; `application` → yalnızca `domain` +
-      kendi `ports/`; `agent` → `application` + `domain`; `infrastructure` →
-      `application/ports` + `domain`; `presentation` → composition root.
-- [ ] `mypy.ini` veya `pyproject.toml` `[tool.mypy]` strict ayarları.
-- [ ] CI workflow dosyası (`.github/workflows/ci.yml` veya eşdeğeri).
-- [ ] `requirements.txt`'yi sil, `pyproject.toml`'a geçir.
-- [ ] `.env.example`'ı `pydantic-settings` `Settings` sınıfıyla hizala.
+- [x] `pyproject.toml` yaz. *(F1.2, PR #4 — `[project]`, dev deps, ruff, mypy, pytest hepsi orada)*
+- [x] `importlinter` config. *(`pyproject.toml` `[tool.importlinter]`; 7 kontrat: layered + forbidden Pydantic/FastAPI/httpx/SQLAlchemy/LLM SDK sızıntı)*
+- [x] `[tool.mypy]` strict ayarları. *(PR #4; strict=true, plugins=pydantic.mypy)*
+- [x] CI workflow dosyası. *(`.github/workflows/ci.yml`, F1.9)*
+- [x] `requirements.txt`'yi sil, `pyproject.toml`'a geçir. *(F1.1, PR #4)*
+- [x] `.env.example`'ı `Settings` sınıfıyla hizala. *(F1.6 + F5.1 + F8 + F9 boyunca senkron tutuldu)*
 
 ## Affected areas
 

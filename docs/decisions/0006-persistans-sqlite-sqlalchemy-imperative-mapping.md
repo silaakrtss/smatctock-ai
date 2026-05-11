@@ -281,29 +281,21 @@ Kurallar:
 
 ## Open items
 
-- [ ] `pyproject.toml` bağımlılıkları: `sqlalchemy[asyncio]>=2.0,<3`,
-      `aiosqlite>=0.20`, `alembic>=1.13`.
-- [ ] `src/infrastructure/db/engine.py` — `AsyncEngine` fabrikası, WAL +
-      foreign_keys pragma'larını set eden event listener.
-- [ ] `src/infrastructure/db/session.py` — `async_sessionmaker`.
-- [ ] `src/infrastructure/db/tables.py` — Product, Order, OrderStatusHistory,
-      Shipment, StockThreshold, NotificationLog tabloları (Core, Table API).
-- [ ] `src/infrastructure/db/mappings.py` — `configure_mappings()`.
-- [ ] `src/domain/*/` — saf dataclass domain entity'leri.
-- [ ] `src/application/ports/*_repository.py` — port arayüzleri (hibrit
-      CRUD + iş-anlamlı query metodları).
-- [ ] `src/infrastructure/db/repositories/` — SqlAlchemy implementasyonları.
-- [ ] `src/infrastructure/db/seed.py` — 5-8 ürün, ~30 sipariş, 3 günlük
-      dağılım, çeşitli kargo durumları.
-- [ ] Alembic kurulumu: `alembic init`, `env.py` metadata bağlama,
-      `0001_initial_schema.py` migration.
-- [ ] Test fakes: `tests/_fakes/in_memory_*_repository.py`.
-- [ ] Entegrasyon testleri: her repository için en az 1 happy path + 1 edge
-      case (`tests/integration/db/`).
-- [ ] FastAPI `Depends` ile per-request session açma/kapama; composition
-      root'ta engine'ı app lifespan'a bağlama.
-- [ ] CI'da `alembic upgrade head` smoke testi (migration dosyalarının
-      tutarlılığını doğrular).
+- [x] `pyproject.toml` bağımlılıkları. *(F1.2 — sqlalchemy[asyncio], aiosqlite, alembic)*
+- [x] `engine.py` — WAL + foreign_keys pragma listener. *(F4.1)*
+- [x] `session.py` — `async_sessionmaker`. *(F4.1, `expire_on_commit=False`)*
+- [x] `tables.py` — products, orders, shipments, notifications, stock_thresholds + StrEnumType. *(F4.2; `OrderStatusHistory` ayrı tablo yazılmadı — Order.status doğrudan tutuluyor, history ihtiyacı doğmadıkça eklenmeyecek)*
+- [x] `mappings.py` — `configure_mappings()`. *(F4.3 — idempotent, registry.map_imperatively)*
+- [x] Domain dataclass'lar. *(F2 — Product, Order, OrderStatus, Shipment, ShipmentStatus, StockThreshold, Notification + ilgili exceptions)*
+- [x] Repository port arayüzleri. *(F3.1 + F6.1 ek metodlar — get_by_name, list_filtered, get_by_order, list_recent)*
+- [x] SQLAlchemy repository implementasyonları. *(F4.4-F4.7; F6.1'de genişlemeler senkronlandı)*
+- [x] `seed.py` + seed CLI. *(F4.8 `seed_dev_data` + F10 `seed_cli.py` `make seed` hedefi)*
+- [x] Alembic kurulumu + `0001_initial_schema.py`. *(F4.8 — async env.py, asyncio.run + run_sync deseni)*
+- [x] Entegrasyon testleri. *(F4.4-F4.7 — `tests/integration/db/` 15 test)*
+- [x] FastAPI `Depends` ile per-request session. *(F8.1 `dependencies.get_scope`; F9 fix `try/except/else` ile commit/rollback eklendi — write tool persistence bugfix'i)*
+- [ ] Test fakes: `tests/_fakes/in_memory_*_repository.py`. *(Mevcut yapı: her test dosyası kendi fake'ini inline tanımlıyor, bağımsızlık için. Ortak `tests/_fakes/` paketi eklenmedi; eklenirse 6 dosyada tekrar azalır.)*
+- [ ] Seed boyutu: ~30 sipariş, 5-8 ürün. *(F4.8 seed: 3 ürün + 3 sipariş + 1 kargo — orijinal plandan küçük; demo için yeterli, hackathon ölçeğinde bilinçli kısıtlama)*
+- [ ] CI'da `alembic upgrade head` smoke testi. *(`tests/integration/db/test_schema_smoke.py` `metadata.create_all`'u test ediyor — Alembic'i değil. Gerçek Alembic upgrade smoke'u eklenmedi; düşük risk çünkü migration dosyası elle tablo tanımıyla aynı, F4 doğrulamasında manuel `alembic upgrade head` çalıştı)*
 
 ## Affected areas
 

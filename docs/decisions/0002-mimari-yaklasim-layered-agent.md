@@ -253,14 +253,14 @@ Bu ADR Accepted olunca yapılacak refactor (ayrı commit'te):
 
 ## Open items
 
-- [ ] `src/` iskeletini oluştur (`mkdir -p src/{domain,application/ports,application/services,agent/tools,infrastructure/{db,llm,notifiers,scheduler},presentation/api/routes} tests/{unit,integration,e2e}`).
-- [ ] Mevcut `main.py`'ı bu ADR'daki haritaya göre dağıt (ayrı bir commit, "refactor: main.py'ı layered yapıya taşı").
-- [ ] `src/`'i import yolu olarak ayarla (`pyproject.toml` veya `PYTHONPATH`).
-- [ ] `pytest` konfigürasyonu (`pytest.ini` veya `pyproject.toml` `[tool.pytest.ini_options]`) + `tests/` keşfi.
-- [ ] İlk concept sayfası: `docs/concepts/katman-haritasi.md` — "şu dosya nereye gider?" karar akışı.
-- [ ] CI'da `domain/` ve `application/` katmanlarında concrete adapter import yasağını otomatik kontrol et (`import-linter` veya `grimp`). Katman ihlali CI'ı kırar.
-- [ ] CI'da coverage eşiği zorunlu (`pytest --cov --cov-fail-under=85`); eşik altı CI kırılır.
-- [ ] CI'da `ruff` + `mypy` (strict) çalışır; tip ihlali ve lint hatası CI'ı kırar.
+- [x] `src/` iskeletini oluştur. *(F1.3, PR #4)*
+- [x] Mevcut `main.py`'ı bu ADR'daki haritaya göre dağıt. *(F1'de silindi, F2-F8'de sıfırdan yazıldı — kullanıcı kararı: "main.py'ı sil, sıfırdan yaz")*
+- [x] `src/`'i import yolu olarak ayarla. *(`pyproject.toml` `[tool.setuptools.packages.find]`, PR #4)*
+- [x] `pytest` konfigürasyonu + `tests/` keşfi. *(`pyproject.toml` `[tool.pytest.ini_options]`, asyncio_mode=auto)*
+- [x] CI'da `import-linter` ile katman ihlali kontrolü. *(7 kontrat: layered + Pydantic/FastAPI/httpx/SQLAlchemy/openai/google sızıntı koruması)*
+- [x] CI'da coverage eşiği zorunlu. *(`--cov-fail-under=85`; mevcut: %85.19)*
+- [x] CI'da `ruff` + `mypy --strict` çalışır. *(`.github/workflows/ci.yml`)*
+- [ ] İlk concept sayfası: `docs/concepts/katman-haritasi.md` — "şu dosya nereye gider?" karar akışı. *(README'deki klasör yapısı + bağımlılık yönü açıklaması kısmen karşılıyor; ayrı karar akışı sayfası henüz yok — düşük öncelik)*
 
 ## Affected areas
 

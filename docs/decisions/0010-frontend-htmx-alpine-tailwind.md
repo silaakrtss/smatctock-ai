@@ -335,35 +335,21 @@ ADR-0002 ile uyumlu:
 
 ## Open items
 
-- [ ] `pyproject.toml` bağımlılığı: `jinja2>=3.1`.
-- [ ] `src/presentation/templates/` ve `src/presentation/static/` iskeleti.
-- [ ] `base.html` layout: HTMX + Alpine + Tailwind CDN script'leri,
-      Google Fonts (Inter, JetBrains Mono), nav, footer, SSE bootstrap.
-- [ ] `pages/home.html`, `pages/dashboard.html`, `pages/order_detail.html`.
-- [ ] `components/`: chat_bubble, order_card, product_card, stock_badge,
-      notification_toast, empty_state, loading_dots, status_pill.
-- [ ] `static/css/app.css`: custom palette tanımları, font-family
-      override'ları, az sayıda custom utility class.
-- [ ] `static/js/chat.js`: chat form submit + cevap render mantığı (Alpine
-      ile veya saf HTMX).
-- [ ] `static/js/sse_bootstrap.js`: HTMX SSE extension boot + toast
-      handler (gerekirse).
-- [ ] `api/routes/pages.py`: 3 sayfa için Jinja render endpoint'leri.
-- [ ] HTMX partial endpoint'leri: `/dashboard/today-orders/partial`,
-      `/dashboard/low-stock/partial`, `/dashboard/delayed-shipments/partial`,
-      `/order/{id}/timeline/partial`.
-- [ ] `FrontendNotifier` (ADR-0008) SSE event payload'ını HTMX `sse-swap`
-      ile uyumlu HTML fragment olarak yayar; metadata `recipient` filter
-      bilgisini içerir.
-- [ ] **`frontend-design` skill çağrısı** ilk template implementasyonunda;
-      ADR sınırları içinde production-grade çıktı.
-- [ ] `vectors.db` silme (ADR-0009 Open item'ı), `static/index.html`
-      eski dosyayı kaldırma.
-- [ ] Manuel demo provası: scripted senaryo, README'ye yazılı talimat.
-- [ ] Stretch: Playwright E2E test (`webapp-testing` skill ile) — chat
-      mesajı gönder, dashboard yenile, SSE toast doğrula.
-- [ ] Stretch: karanlık mod toggle.
-- [ ] Stretch: mobil responsive son ayar.
+- [x] `pyproject.toml` bağımlılığı: `jinja2>=3.1`. *(F1.2)*
+- [x] `templates/` + `static/` iskeleti. *(F8.5)*
+- [x] `base.html` layout. *(F8.5 — HTMX 1.9 + Alpine 3 + Tailwind CDN + Google Fonts Inter/Plus Jakarta Sans; F9.3'te marked + DOMPurify CDN eklendi)*
+- [x] 3 sayfa: chat, dashboard, order tracking. *(F8.6 — `chat.html`, `dashboard.html`, `orders_explorer.html`)*
+- [x] `static/css/custom.css`: custom palette + tipografi + bileşen stilleri. *(F8.5 — harvest yeşili + ember turuncusu + cream; notification-card animasyon, chat-message bubble, status-pill, F9.3'te markdown-body stilleri eklendi)*
+- [x] Chat form submit + cevap render. *(F8.6 inline Alpine x-data; F10.3'te `chatPanel()` function'a çıkarıldı, sessionStorage entegre edildi)*
+- [x] `api/routes/pages.py`. *(F8.6 — Jinja2Templates ile 3 endpoint)*
+- [x] FrontendNotifier SSE event payload. *(F7.6 + F8.4 — `_serialize` fonksiyonu; event metadata Alpine x-data'da filtrelenebilir formatda)*
+- [x] `vectors.db` silme + `static/index.html` kaldırma. *(F1.1, PR #4)*
+- [x] Manuel demo provası. *(F9 demo provası — canlı MiniMax çağrısı, 3 pürüz tespit edilip düzeltildi; `docs/concepts/demo-akisi.md` scripted senaryo)*
+- [ ] Bileşen kataloğu (components/ altında). *(Bileşenler inline `chat.html`/`dashboard.html` içinde yaşıyor; ayrı `components/` Jinja2 macro paketi çıkarılmadı. Yeni sayfa eklenirse refactor gerekir.)*
+- [ ] HTMX partial endpoint'leri. *(`/products` + `/orders` JSON endpoint'leri dashboard'da HTMX target oluyor; ayrı `/partial` route'ları (HTML fragment) eklenmedi — Alpine x-data tarafı JSON parse'ı tercih edildi.)*
+- [ ] `static/js/chat.js` ve `sse_bootstrap.js` ayrı dosyalar. *(JS template içinde inline; ileride büyürse `static/js/`'e çıkarılabilir.)*
+- [ ] `frontend-design` skill çağrısı. *(El ile palette ve component yazıldı; production-grade tasarım için skill ile cilalama yapılmadı — düşük öncelik, mevcut UI ADR-0010 § custom aesthetic kuralını sağlıyor.)*
+- [ ] **Stretch**: Playwright E2E test, karanlık mod toggle, mobil responsive son ayar. *(Üçü de stretch goal — kapsamda zorunlu değil, hackathon ölçeği için ertelendi.)*
 
 ## Affected areas
 

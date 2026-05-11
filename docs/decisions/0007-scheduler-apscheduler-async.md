@@ -264,23 +264,19 @@ tetiklemek isteyen senaryo job fonksiyonunu **doğrudan** çağırır
 
 ## Open items
 
-- [ ] `pyproject.toml` bağımlılığı: `apscheduler>=4.0`.
-- [ ] `src/application/ports/scheduler.py` — `Scheduler` port + `CronTrigger`
-      dataclass.
-- [ ] `src/infrastructure/scheduler/apscheduler_adapter.py` — port impl.
-- [ ] `src/infrastructure/scheduler/jobs/check_stock_thresholds.py`.
-- [ ] `src/infrastructure/scheduler/jobs/check_shipping_delays.py`.
-- [ ] `src/agent/workflows/morning_briefing.py` — LLM'li sabah özeti workflow.
-- [ ] `src/infrastructure/scheduler/registry.py` — `register_jobs(...)`.
-- [ ] `src/presentation/main.py` lifespan'a scheduler start/stop entegrasyonu.
-- [ ] `SchedulerSettings` (Settings içine).
-- [ ] Domain: `DelayPolicy` (kargo "gecikmiş" tanımı) + `NotificationLog`
-      tablosu/entity'si (spam engelleme için; ADR-0006 tablolarına eklenecek).
-- [ ] Job birim testleri (`tests/unit/scheduler/jobs/`): üç job için
-      happy path + 1 edge case her biri.
-- [ ] Demo senaryosunda scheduler'ın gözle görünür kanıtı: stok manuel
-      düşürüldüğünde bir sonraki saat başı bildirimin geldiğini gösteren akış
-      (veya demo modunda cron'u "her dakika" yapma).
+- [x] `pyproject.toml` bağımlılığı: `apscheduler>=4.0.0a5`. *(F1.2)*
+- [x] `application/ports/scheduler.py` — `Scheduler` port + `CronTrigger` dataclass. *(F3.2; F7.1'de `add_job` async'e taşındı — APScheduler 4 alpha API uyumu)*
+- [x] `infrastructure/scheduler/apscheduler_adapter.py` — port impl. *(F7.1 — `start_in_background`, `ConflictPolicy.replace`)*
+- [x] `check_stock_thresholds` job. *(F7.2 — saf coroutine, apscheduler import etmiyor; `StockThresholdJobContext` parameter object)*
+- [x] `check_shipping_delays` job. *(F7.3 — `ShippingDelayJobContext`, `now` injection ile FIRST: Repeatable)*
+- [x] `agent/workflows/morning_briefing.py` — LLM'li sabah özeti workflow. *(F7.4 — AgentLoop + PromptLoader + NotificationService orkestrasyonu; tetikleyici `infrastructure/scheduler/jobs/morning_briefing_job.py`)*
+- [x] Lifespan'a scheduler start/stop entegrasyonu. *(F8.7 — `SCHEDULER_ENABLED=true` ise `register_scheduler_jobs` çağrılır; composition root cron expression'larını CronTrigger'a parse eder)*
+- [x] Scheduler Settings. *(F8 — `scheduler_enabled`, `scheduler_stock_check_cron`, `scheduler_shipping_check_cron`, `scheduler_morning_briefing_cron`)*
+- [x] Job birim testleri. *(F7.2-F7.3 — `tests/unit/infrastructure/scheduler/` 8 test)*
+- [x] Demo senaryosunda scheduler kanıtı. *(`docs/concepts/demo-akisi.md` § 4 — "Proaktif tetikleyici"; demo'da scheduler kapalı tutmak tercih edildi, chat'ten tetikleme daha okunabilir)*
+- [ ] `infrastructure/scheduler/registry.py` — `register_jobs(...)` ayrı modül. *(`composition.register_scheduler_jobs` fonksiyonu bu rolü doldurdu; ayrı registry.py modülü oluşturulmadı — composition root'ta kalması mimari olarak doğal)*
+- [ ] Domain: `DelayPolicy` + spam engelleme `NotificationLog`. *(Shipment.is_delayed(now) basit "expected geçti + delivered yok" mantığıyla ADR-0007'nin orijinal DelayPolicy'sini yerine getiriyor. Cooldown / spam engelleme **henüz yok** — ADR-0008'de notu duruyor, NotificationService'e cooldown eklemek gerekirse açık iş)*
+- [ ] `morning_briefing` job için cron tetikleyici composition'a bağlama. *(Workflow F7.4'te var ama scheduler'a otomatik kayıt edilmedi — F8.7 yalnızca stock+shipping bağlıyor. Manuel `register_morning_briefing` bağlanması gerekirse açık iş)*
 
 ## Affected areas
 

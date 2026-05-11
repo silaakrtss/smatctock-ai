@@ -407,30 +407,22 @@ ADR-0002 test stratejisinin agent için somutlaşması:
 
 ## Open items
 
-- [ ] `src/agent/loop.py` — `AgentLoop.run(...)` implementasyonu, iteration
-      sınırı, exception akışı.
-- [ ] `src/agent/conversation.py` — `Conversation` sınıfı, reasoning
-      preservation testleri ile birlikte.
-- [ ] `src/agent/tools/definitions.py` — 8 tool'un JSON schema'ları,
-      Türkçe açıklamalar.
-- [ ] `src/agent/tools/registry.py` — `ToolRegistry`.
-- [ ] `src/agent/tools/dispatcher.py` — `ToolDispatcher` + JSON Schema
-      validator (kütüphane: `jsonschema` veya pydantic ile sınırlı
-      kullanım — pydantic adapter sınırında olduğu için kabul).
-- [ ] `src/agent/prompts/system_chat.md` ve `system_morning_briefing.md`.
-- [ ] `src/agent/prompt_loader.py` — dosyadan markdown okur, string döner.
-- [ ] `tests/_fakes/fake_llm_client.py` — scripted yanıtlar.
-- [ ] Loop birim testleri (yukarıdaki 6 senaryo).
-- [ ] Dispatcher + Conversation birim testleri.
-- [ ] E2E `/ai-chat` testi (FakeLLMClient ile).
-- [ ] `vectors.db` dosyasını sil, `.gitignore`'a ekle (RAG kalıntısı
-      temizliği).
-- [ ] Demo akış senaryosunu README'ye yaz (ADR-0001'in Open item'ı):
-      "Ayşe'nin domatesleri nerede?" örnek konuşması, jüri için.
-- [ ] `Settings`: `max_tool_iterations` (default 8), `prompt_dir`
-      (default `agent/prompts`).
-- [ ] `MAX_TOOL_ITERATIONS` aşıldığında üst katmanın döneceği Türkçe
-      mesaj template'i.
+- [x] `agent/loop.py` — `AgentLoop.run(...)`, iteration sınırı, exception akışı. *(F6.6 — max 8 iter, `AgentLoopExceededError(last_response)`)*
+- [x] `agent/conversation.py` + reasoning preservation testleri. *(F6.5 — `test_full_round_preserves_order_and_no_truncation`)*
+- [x] `agent/tools/definitions.py` — 8 tool JSON schema'ları. *(F6.7 — Türkçe açıklamalar, "ne zaman kullan" davranış ipuçları)*
+- [x] `agent/tools/registry.py`. *(F6.3 — `DuplicateToolError`)*
+- [x] `agent/tools/dispatcher.py` + validator. *(F6.4 — basit `required` alan kontrolü; jsonschema dep eklenmedi, ihtiyaç yetmedi)*
+- [x] `agent/prompts/system_chat.md` + `system_morning_briefing.md`. *(F6.8 — rol, domain bağlamı, tool kullanımı, hata davranışı, çıktı stili)*
+- [x] `agent/prompts/loader.py`. *(F6.8 — `PromptNotFoundError`)*
+- [x] Loop birim testleri. *(F6.6 — 3 test)*
+- [x] Dispatcher + Conversation birim testleri. *(F6.4 + F6.5 — 4 + 5 test)*
+- [x] `vectors.db` sil + `.gitignore`. *(F1.1, PR #4)*
+- [x] Demo akış senaryosu. *(F8.8, `docs/concepts/demo-akisi.md` — beş tema zincirleyen tek hikâye)*
+- [x] `Settings.agent_max_tool_iterations`. *(F1.6 default=8)*
+- [x] MAX_TOOL_ITERATIONS aşıldığında Türkçe mesaj. *(F8.3 `routes/ai_chat.py` 422: "İsteğinizi tam çözemedim, biraz daha spesifik sorabilir misiniz?")*
+- [ ] E2E `/ai-chat` testi (FakeLLMClient ile). *(Composition root `LLM_PROVIDER` env'e göre adapter bağlıyor; FakeLLMClient'i `Depends` override ile inject etmek için ek scaffold gerekiyor. F9 demo provasında canlı MiniMax ile manuel smoke yapıldı; formal e2e test eklenmedi.)*
+- [ ] `tests/_fakes/fake_llm_client.py` ortak paketi. *(Her test inline `_ScriptedLLM`/`FakeOpenAI`/`FakeGenAI` tanımlıyor; ortak paket çıkarılırsa duplikasyon azalır — düşük öncelik.)*
+- [ ] `Settings.prompt_dir` env override. *(`PromptLoader` default directory'yi bundled prompt'lardan alıyor; env override henüz yok — düşük öncelik.)*
 
 ## Affected areas
 

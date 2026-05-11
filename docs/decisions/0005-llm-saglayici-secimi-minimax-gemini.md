@@ -207,27 +207,17 @@ zorlanır; her iki sağlayıcı için aynı state davranışını garantiler.
 
 ## Open items
 
-- [ ] `application/ports/llm_client.py` port arayüzünü ve dataclass'larını
-      yaz (`Message`, `ToolDefinition`, `ToolCall`, `LLMResponse`,
-      `LLMRateLimitError`).
-- [ ] `infrastructure/llm/minimax_client.py` adapter'ı: `openai` SDK +
-      `base_url="https://api.minimax.io/v1"`; mevcut `main.py`'daki
-      MiniMax kodunu temizle.
-- [ ] `infrastructure/llm/gemini_client.py` adapter'ı: `google-genai` SDK ile.
-- [ ] `pyproject.toml` dependency güncellemeleri: `openai>=1.40,<2`,
-      `google-genai` (resmi paket adı doğrulanacak).
-- [ ] `Settings` (`pydantic-settings`) içine: `llm_provider`, `minimax_api_key`,
-      `minimax_model`, `google_api_key`, `gemini_model`.
-- [ ] `.env.example` güncellemesi: yeni env değişkenleri + açıklama yorumları.
-- [ ] `conversation.py` reasoning_details / tool_calls / thinking bloklarını
-      truncate etmeyen state davranışı; test edilebilir tasarım.
-- [ ] Adapter testleri: `FakeOpenAIClient` + `FakeGoogleClient` ile birim
-      test; en az 1 entegrasyon testi her sağlayıcı için (`--run-live`
-      flag'iyle, CI'da default skip).
-- [ ] Adapter'larda exponential backoff (en fazla 3 deneme) + rate limit
-      hatası dönüştürme (port'taki `LLMRateLimitError`).
-- [ ] Sunum/README'de "iki sağlayıcı, port/adapter ile geçiş" hikâyesini
-      yazıya dök.
+- [x] `application/ports/llm_client.py` port + dataclass'lar. *(F3.2 — `ChatMessage`, `ToolDefinition`, `ToolCall`, `LLMResponse`; `llm_errors.py`'de hata hiyerarşisi)*
+- [x] MiniMax adapter (openai SDK + base_url override). *(F5.2; eski `main.py` httpx kodu F1'de zaten silinmişti — adapter sıfırdan yazıldı)*
+- [x] Gemini adapter (`google-genai` SDK). *(F5.3 — `system_instruction` ayrı kanal, `function_declarations` toolling, `reasoning_details={}` Gemini üretmiyor)*
+- [x] `pyproject.toml` dependency: `openai>=1.40,<2`, `google-genai>=0.3`. *(F5.1)*
+- [x] `Settings` LLM alanları: `llm_provider`, `minimax_*`, `google_api_key`, `gemini_*`. *(F5.1)*
+- [x] `.env.example` güncellemesi. *(F5.1 + F8'de manager/supplier_recipient ile birlikte)*
+- [x] `conversation.py` reasoning_details truncate etmeyen davranış + test. *(F6.5 — `test_preserves_tool_calls_and_reasoning_details`, `test_full_round_preserves_order_and_no_truncation`)*
+- [x] Adapter testleri fake SDK'larla. *(F5.2 + F5.3 — 12 birim test; gerçek API'ye dokunulmadı)*
+- [x] Exponential backoff + rate limit hata dönüşümü. *(F5.2/F5.3 — 3 deneme, asyncio.sleep injection ile test edilebilir; `LLMRateLimitError`/`LLMTransportError`)*
+- [x] README'de "iki sağlayıcı" hikayesi. *(F10 README rewrite — "İki sağlayıcılı LLM (port arkasında)" bölümü)*
+- [x] **F9 ek:** `<think>...</think>` sanitize. *(`response_sanitizer.strip_reasoning_blocks` — UI'a giderken temizler; conversation state TAM korunur (§ 5 kuralı sağlam))*
 
 ## Affected areas
 

@@ -294,37 +294,22 @@ async def send(self, notification: Notification) -> None:
 
 ## Open items
 
-- [ ] `pyproject.toml`: ek bağımlılık yok (httpx zaten yığında, SSE FastAPI
-      native).
-- [ ] `src/application/ports/notifier.py` — `Notifier` port + `NotifierError`.
-- [ ] `src/domain/notifications/notification.py` — `Notification` dataclass +
-      `Recipient` sealed hiyerarşisi + `NotificationCategory` enum.
-- [ ] `src/application/ports/notification_log_repository.py` — port.
-- [ ] `src/infrastructure/db/repositories/notification_log_repository.py` —
-      SqlAlchemy impl (ADR-0006 tablolarına `notification_log` ekle).
-- [ ] `src/infrastructure/notifiers/telegram_notifier.py` — httpx-tabanlı
-      adapter + MarkdownV2 escape + retry.
-- [ ] `src/infrastructure/notifiers/sse_hub.py` — in-memory pub-sub.
-- [ ] `src/infrastructure/notifiers/frontend_notifier.py` — DB + hub
-      publish.
-- [ ] `src/infrastructure/notifiers/fanout_notifier.py` — paralel send,
-      best-effort.
-- [ ] `src/application/services/notification_service.py` — cooldown kuralı
-      + log kaydı + adapter'a delegasyon.
-- [ ] `src/presentation/api/routes/notifications.py` — `GET /notifications`
-      (REST list), `GET /notifications/stream` (SSE).
-- [ ] `Settings`: `TELEGRAM_BOT_TOKEN`, `MANAGER_CHAT_ID`, `notifier_channel:
-      Literal["fanout","telegram","frontend"] = "fanout"`.
-- [ ] `.env.example` güncellemesi.
-- [ ] Frontend (askıda olsa da) için en az **minimum bildirim paneli**:
-      sayfa açıldığında `/notifications` GET, sonra `/notifications/stream`
-      EventSource dinleme. Bu kod `static/index.html` veya gelecek frontend
-      ADR'ında dolacak.
-- [ ] Adapter birim testleri (`tests/unit/notifiers/`): Telegram (httpx
-      mock), Frontend (fake hub + fake repo), SseHub (çoklu subscriber),
-      Fanout (kısmen başarısız).
-- [ ] E2E SSE testi (`tests/e2e/api/test_notifications_stream.py`).
-- [ ] `NotificationService` cooldown birim testi.
+- [x] `pyproject.toml`: ek bağımlılık yok. *(httpx zaten yığında, F1.2)*
+- [x] `application/ports/notifier.py` — `Notifier` port + `NotifierError`. *(F3.2)*
+- [x] `domain/notifications/notification.py` — Notification dataclass + Channel/Status enum. *(F2.5; sealed Recipient hiyerarşisi yerine düz string recipient tercih edildi — `Recipient` polymorphism YAGNI olduğu için tek string alan)*
+- [x] `telegram_notifier.py` — httpx + MarkdownV2 escape + retry. *(F7.5 — kategori emoji prefix'i: 🔴 stok, ⚠️ kargo, ☀️ brifing, 📦 sipariş; token yoksa noop)*
+- [x] `sse_hub.py` — in-memory pub-sub. *(F7.6 — AsyncQueue tabanlı; F10.2 fix'iyle disconnect/cancel temizliği eklendi)*
+- [x] `frontend_notifier.py` — DB + hub publish. *(F7.6)*
+- [x] `fanout_notifier.py` — paralel send, best-effort. *(F7.7 — asyncio.gather + per-notifier exception izolasyonu)*
+- [x] `notification_service.py` — adapter'a delegasyon. *(F3.6 dispatch + F6.1 `notify_customer` helper)*
+- [x] `routes/notifications.py` — REST list + SSE stream. *(F8.4; F10.2 fix'iyle SSE bağlantı yaşam döngüsü iyileştirildi)*
+- [x] Settings: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. *(F1.6, F5.1; `notifier_channel: Literal[...]` kullanılmadı — composition root sabit FanoutNotifier kuruyor, runtime seçim ihtiyacı doğmadı)*
+- [x] `.env.example` güncellemesi. *(F1.6 + F8 boyunca senkron tutuldu)*
+- [x] Frontend bildirim paneli. *(F8.6 dashboard.html — `/notifications` initial fetch + `/notifications/stream` EventSource + Alpine x-data; F10.1-10.2'de visibility-aware lifecycle eklendi)*
+- [x] Adapter birim testleri. *(F7.5-F7.7 — Telegram 6, SseHub 3, Frontend 1, Fanout 3 = 13 birim test)*
+- [ ] **`NotificationLog` repository + cooldown spam engelleme.** *(Ayrı `notification_log` tablosu yazılmadı; mevcut `notifications` tablosu zaten her dispatch'i kaydediyor. Ancak `NotificationService`'te cooldown kuralı **henüz yok** — aynı bildirim her job tetiklemesinde yeniden gönderilir. Hackathon ölçeği için kabul edilebilir; production'da kritik açık iş.)*
+- [ ] E2E SSE testi (`test_notifications_stream.py`). *(StreamingResponse'u TestClient ile test etmek pratikte zor; F8.4'te dolaylı testler ve canlı smoke yapıldı. Async iterator'ı doğrulayan formal E2E test eklenmedi.)*
+- [ ] `NotificationService` cooldown birim testi. *(Cooldown kuralı yok — yukarıdaki açık ile birlikte gelir.)*
 
 ## Affected areas
 

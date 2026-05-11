@@ -190,17 +190,13 @@ değişmeden geçmeye devam etmelidir**.
 
 ## Open items
 
-- [ ] `pyproject.toml`'da `langchain*` ve `langgraph` paketlerinin **yasaklı
-      bağımlılık** olarak listelendiği yere bir yorum satırı veya `tool.uv`
-      benzeri kısıtlama (varsa) eklemek. Net hatırlatma için CI'da bu paketlerin
-      `pip list`'te bulunmadığını doğrulayan basit bir check yazmak.
-- [ ] `application/ports/llm_client.py` port arayüzünü taslakla: `chat()`,
-      `chat_with_tools()`, `Message`, `ToolCall`, `LLMResponse` dataclass'ları.
-- [ ] İlk LLM adapter'ı: mevcut MiniMax çağrısını `infrastructure/llm/minimax_client.py`'ye taşı; port'u implement et.
-- [ ] `agent/loop.py` iskeleti: "LLM çağır → tool call varsa dispatcher'a yolla → tool sonucunu mesajlara ekle → tekrar et" döngüsü.
-- [ ] `agent/tools/registry.py` ve `dispatcher.py` iskeleti.
-- [ ] `agent/conversation.py`: mesaj geçmişi + sistem prompt yönetimi.
-- [ ] `FakeLLMClient` test yardımcısı: `tests/unit/agent/conftest.py`.
+- [x] `application/ports/llm_client.py` port arayüzü. *(F3.2 — `ChatMessage`, `ToolDefinition`, `ToolCall`, `LLMResponse` + `LLMRateLimitError`/`LLMTransportError`/`LLMResponseShapeError`)*
+- [x] MiniMax adapter (`infrastructure/llm/minimax_client.py`). *(F5.2 — openai SDK + base_url override, eski httpx kodu yok)*
+- [x] `agent/loop.py`. *(F6.6 — max 8 iter, `AgentLoopExceededError`)*
+- [x] `agent/tools/registry.py` ve `dispatcher.py`. *(F6.3, F6.4 — `DuplicateToolError`, JSON Schema zorunlu alan validasyonu, exception → `ToolResult.error` kapsülleme)*
+- [x] `agent/conversation.py`. *(F6.5 — `reasoning_details` truncate yasağı kanıtı `test_full_round_preserves_order_and_no_truncation`)*
+- [x] Fake LLM client test yardımcısı. *(her test dosyasında inline `_ScriptedLLM` veya `FakeOpenAI`/`FakeGenAIClient` — ortak conftest yerine bağımsız fake'ler tercih edildi, test bağımsızlığı için)*
+- [ ] `pyproject.toml`'da `langchain*`/`langgraph` yasak yorumu + CI'da `pip list`'te yokluğu doğrulayan check. *(Pratikte bu paketler hiç eklenmedi; import-linter veya benzeri "negatif dep" check'i yazılmadı. Düşük risk — yeni bir geliştirici denerse `make check` import yapısı bozulacağı için yakalanır.)*
 
 ## Affected areas
 

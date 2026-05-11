@@ -120,11 +120,11 @@ Beş tema seçilir ve tek bir agent etrafında birleştirilir:
 
 ## Open items
 
-- [ ] README'de "neden bu beş tema, neden Tema 6 yok?" gerekçesini tek paragraflık özet olarak yaz.
-- [ ] Demo akış senaryosunu beş temayı zincirleyecek şekilde yazıya dök.
-- [ ] Tema 2 ve Tema 5 için kapsam sınırlarını (ne yapılır / ne yapılmaz) bir concept sayfasında netleştir.
-- [ ] Seed data planı: en az 3 günlük, ~30 sipariş, çeşitli durumlarda (Hazırlanıyor, Kargoda, Teslim edildi, Gecikme).
-- [ ] Frontend / dashboard kararı için ayrı ADR aç (Tema 2'nin görsel katmanı orada konuşulacak).
+- [x] README'de "neden bu beş tema, neden Tema 6 yok?" gerekçesini tek paragraflık özet olarak yaz. *(F10 README rewrite, `docs(readme):` commit `7527624`; "5 Tema → Kod Haritası" bölümü)*
+- [x] Demo akış senaryosunu beş temayı zincirleyecek şekilde yazıya dök. *(F8.8, `docs/concepts/demo-akisi.md`)*
+- [x] Frontend / dashboard kararı için ayrı ADR aç. *(ADR-0010 — Frontend HTMX/Alpine/Tailwind)*
+- [ ] Tema 2 ve Tema 5 için kapsam sınırlarını (ne yapılır / ne yapılmaz) bir concept sayfasında netleştir. *(README "5 Tema → Kod Haritası" tablosu kısmen karşılıyor; ayrı concept sayfası henüz yok — düşük öncelik)*
+- [ ] Seed data planı: en az 3 günlük, ~30 sipariş, çeşitli durumlarda. *(F4 seed: 3 ürün + 3 sipariş + 1 kargo; orijinal plandaki ~30 siparişe ulaşılmadı — demo için yeterli ama hedeften küçük)*
 
 ## Affected areas
 
