@@ -346,7 +346,8 @@ ADR-0002 ile uyumlu:
 - [x] `vectors.db` silme + `static/index.html` kaldırma. *(F1.1, PR #4)*
 - [x] Manuel demo provası. *(F9 demo provası — canlı MiniMax çağrısı, 3 pürüz tespit edilip düzeltildi; `docs/concepts/demo-akisi.md` scripted senaryo)*
 - [ ] Bileşen kataloğu (components/ altında). *(Bileşenler inline `chat.html`/`dashboard.html` içinde yaşıyor; ayrı `components/` Jinja2 macro paketi çıkarılmadı. Yeni sayfa eklenirse refactor gerekir.)*
-- [ ] HTMX partial endpoint'leri. *(`/products` + `/orders` JSON endpoint'leri dashboard'da HTMX target oluyor; ayrı `/partial` route'ları (HTML fragment) eklenmedi — Alpine x-data tarafı JSON parse'ı tercih edildi.)*
+- [x] HTMX partial endpoint'leri. *(feature/order-tracking-tabs — dashboard'daki `/products` + `/orders` kartları HTMX `innerHTML` yerine Alpine `x-data` + `fetch` ile JSON parse'a çevrildi; ADR'nın baştan tercih ettiği yaklaşım uygulandı. Ayrı `/partial` HTML fragment route'larına gerek kalmadı.)*
+- [x] Sipariş takip sayfası — stok/anlık/geçmiş sekme görünümü. *(feature/order-tracking-tabs — `orders_explorer.html`: Alpine `orderTracking()` x-data ile 3 sekme, `/orders?status=` filtreleri kullanılır. silaakrtss'in `feature/ProductandOrderTracking` branch fikrinin ADR-0010 uyumlu karşılığı.)*
 - [ ] `static/js/chat.js` ve `sse_bootstrap.js` ayrı dosyalar. *(JS template içinde inline; ileride büyürse `static/js/`'e çıkarılabilir.)*
 - [ ] `frontend-design` skill çağrısı. *(El ile palette ve component yazıldı; production-grade tasarım için skill ile cilalama yapılmadı — düşük öncelik, mevcut UI ADR-0010 § custom aesthetic kuralını sağlıyor.)*
 - [ ] **Stretch**: Playwright E2E test, karanlık mod toggle, mobil responsive son ayar. *(Üçü de stretch goal — kapsamda zorunlu değil, hackathon ölçeği için ertelendi.)*
