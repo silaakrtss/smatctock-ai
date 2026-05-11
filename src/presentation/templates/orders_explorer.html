@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active = 'orders' %}
+{% block title %}Sipariş Takip · Kooperatif Ajanı{% endblock %}
+
+{% block main %}
+<section class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
+         x-data='{ orderId: "" }'>
+  <h1 class="font-display text-2xl text-harvest-700 mb-4">Sipariş Takip</h1>
+  <p class="text-sm text-harvest-600 mb-4">
+    Sipariş kimliğini gir, kargo ve teslim durumunu öğren.
+  </p>
+
+  <form class="flex gap-2 mb-6" @submit.prevent>
+    <input type="number"
+           x-model="orderId"
+           min="1"
+           placeholder="örn. 101"
+           class="flex-1 px-4 py-3 border border-harvest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-harvest-500">
+    <button type="button"
+            @click="if (orderId) htmx.ajax('GET', '/orders/' + orderId, '#order-result')"
+            class="px-5 py-3 bg-ember-500 hover:bg-ember-600 text-white rounded-xl font-medium">
+      Sorgula
+    </button>
+  </form>
+
+  <div id="order-result"></div>
+</section>
+{% endblock %}

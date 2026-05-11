@@ -46,3 +46,4 @@ _Yok._
 | Sayfa | Açıklama |
 |-------|----------|
 | [tdd-refactor-checklist](concepts/tdd-refactor-checklist.md) | TDD refactor adımında bakılacaklar — tam liste + 30 sn hızlı tarama (ADR-0011) |
+| [demo-akisi](concepts/demo-akisi.md) | Sunumda izlenebilecek tek hikâye — beş tema, adım adım ADR referansı |

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Kooperatif Operasyon Ajanı{% endblock %}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            harvest: {
+              50:  '#f7faf2',
+              100: '#e8efd6',
+              200: '#cfddae',
+              500: '#6f8a3a',
+              600: '#5b7430',
+              700: '#465925',
+              900: '#2a3614',
+            },
+            ember: {
+              500: '#d96e2a',
+              600: '#b75a1f',
+            },
+            cream: {
+              50: '#fbf7ec',
+              100: '#f4ecd0',
+              200: '#e8d8a0',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/custom.css">
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen bg-cream-50 text-harvest-900 font-sans">
+
+<header class="bg-harvest-700 text-cream-50 shadow-md">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 font-display text-2xl">
+      <span class="inline-block w-8 h-8 rounded-full bg-ember-500"></span>
+      Kooperatif Ajanı
+    </a>
+    <nav class="flex gap-6 text-sm font-medium">
+      <a href="/" class="hover:text-cream-200 {% if active=='chat' %}text-cream-200 underline underline-offset-4{% endif %}">Sohbet</a>
+      <a href="/dashboard" class="hover:text-cream-200 {% if active=='dashboard' %}text-cream-200 underline underline-offset-4{% endif %}">Operasyon Paneli</a>
+      <a href="/order-tracking" class="hover:text-cream-200 {% if active=='orders' %}text-cream-200 underline underline-offset-4{% endif %}">Sipariş Takip</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8">
+  {% block main %}{% endblock %}
+</main>
+
+<footer class="border-t border-harvest-100 mt-12 py-6 text-center text-sm text-harvest-600">
+  YZTA Hackathon · Kooperatif Operasyon Ajanı · Tema 1–5
+</footer>
+
+</body>
+</html>

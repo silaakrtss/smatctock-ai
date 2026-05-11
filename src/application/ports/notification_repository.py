@@ -12,3 +12,6 @@ class NotificationRepository(ABC):
 
     @abstractmethod
     async def next_id(self) -> int: ...
+
+    @abstractmethod
+    async def list_recent(self, limit: int = 20) -> list[Notification]: ...
