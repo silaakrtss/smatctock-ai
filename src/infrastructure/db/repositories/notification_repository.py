@@ -25,3 +25,8 @@ class SqlAlchemyNotificationRepository(NotificationRepository):
         result = await self.session.execute(select(func.max(notifications_table.c.id)))
         current_max = result.scalar()
         return (current_max or 0) + 1
+
+    async def list_recent(self, limit: int = 20) -> list[Notification]:
+        stmt = select(Notification).order_by(notifications_table.c.created_at.desc()).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

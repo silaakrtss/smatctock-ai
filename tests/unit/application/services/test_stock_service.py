@@ -36,6 +36,9 @@ class _MemoryNotificationRepo(NotificationRepository):
         self._next += 1
         return value
 
+    async def list_recent(self, limit: int = 20) -> list[Notification]:
+        return list(self.saved[-limit:])
+
 
 class _CollectingNotifier(Notifier):
     def __init__(self) -> None:
