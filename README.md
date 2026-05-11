@@ -39,8 +39,38 @@ cp .env.example .env
 make run                           # uvicorn src.presentation.main:app --reload
 ```
 
-- App: <http://127.0.0.1:8000>
+- Sohbet: <http://127.0.0.1:8000/>
+- Operasyon paneli: <http://127.0.0.1:8000/dashboard>
+- Sipariş takip: <http://127.0.0.1:8000/order-tracking>
 - Health: <http://127.0.0.1:8000/health>
+
+## Sayfalar (ADR-0010)
+
+Üç sayfalı multi-page yapı, HTMX + Alpine.js + Tailwind CDN (build pipeline
+yok):
+
+| Sayfa | Rol | Etkileşim |
+|-------|-----|-----------|
+| `/` | Yönetici sohbeti | Alpine fetch → `/ai-chat` → agent loop (8 tool) |
+| `/dashboard` | Operasyon paneli | HTMX `/products` + `/orders` + SSE `/notifications/stream` |
+| `/order-tracking` | Sipariş arama | Sipariş ID → `/orders/{id}` HTMX swap |
+
+## İki sağlayıcı, tek port (ADR-0005)
+
+`LLM_PROVIDER=minimax` (varsayılan, MiniMax M2.7) veya
+`LLM_PROVIDER=gemini` (Google Gemini Flash). Composition root env'e göre
+adapter bağlar; üst katmanlar yalnızca `LLMClient` port'unu görür. Otomatik
+runtime fallback yoktur — sağlayıcı seçimi statik.
+
+## Scheduler (ADR-0007)
+
+`SCHEDULER_ENABLED=true` set edilirse `lifespan` aşağıdaki job'ları bağlar:
+
+- `check_stock_thresholds` — eşik altı ürünler için bildirim
+- `check_shipping_delays` — gecikmiş kargolar için manager uyarısı
+
+(`morning_briefing` agent workflow'u F6'da hazır; cron tetikleyici
+composition root'ta opsiyonel ek bağlamayla devreye alınabilir.)
 
 ## Geliştirme
 
