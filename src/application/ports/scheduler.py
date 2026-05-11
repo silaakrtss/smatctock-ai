@@ -18,7 +18,7 @@ class Scheduler(ABC):
     async def stop(self) -> None: ...
 
     @abstractmethod
-    def add_job(
+    async def add_job(
         self,
         func: Callable[[], Awaitable[None]],
         trigger: CronTrigger,
