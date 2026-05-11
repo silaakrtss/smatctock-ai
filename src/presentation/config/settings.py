@@ -35,6 +35,11 @@ class Settings(BaseSettings):
 
     agent_max_tool_iterations: int = Field(default=8)
 
+    manager_recipient: str = Field(default="@manager")
+    supplier_recipient: str = Field(default="@tedarik")
+
+    scheduler_enabled: bool = Field(default=False)
+
 
 def get_settings() -> Settings:
     return Settings()

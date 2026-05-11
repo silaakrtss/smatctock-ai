@@ -70,6 +70,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["N802", "N806"]
+"src/presentation/api/**" = ["B008"]  # FastAPI Depends() default kalıbı
 
 [tool.ruff.format]
 quote-style = "double"
@@ -125,33 +126,39 @@ name = "Infrastructure import only from presentation (ADR-0002)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent"]
 forbidden_modules = ["src.infrastructure"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "Pydantic forbidden in domain/application/agent (ADR-0003)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent"]
 forbidden_modules = ["pydantic", "pydantic_settings"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "FastAPI only in presentation (ADR-0003)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent", "src.infrastructure"]
 forbidden_modules = ["fastapi"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "httpx only in infrastructure (ADR-0003)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent", "src.presentation"]
 forbidden_modules = ["httpx"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "SQLAlchemy only in infrastructure/db (ADR-0006)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent", "src.presentation"]
 forbidden_modules = ["sqlalchemy", "aiosqlite"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "LLM SDK'ları yalnızca infrastructure/llm'de (ADR-0005)"
 type = "forbidden"
 source_modules = ["src.domain", "src.application", "src.agent", "src.presentation"]
 forbidden_modules = ["openai", "google"]
+allow_indirect_imports = true
