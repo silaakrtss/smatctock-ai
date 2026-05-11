@@ -14,4 +14,10 @@ async def get_scope(request: Request) -> AsyncIterator[RequestScope]:
     container = get_container(request)
     async with container.session_factory() as session:
         scope = await container.build_request_scope(session)
-        yield scope
+        try:
+            yield scope
+        except Exception:
+            await session.rollback()
+            raise
+        else:
+            await session.commit()
