@@ -6,6 +6,7 @@ from src.application.ports.llm_client import ChatMessage
 from src.application.ports.llm_errors import LLMRateLimitError, LLMTransportError
 from src.infrastructure.composition import RequestScope
 from src.presentation.api.dependencies import get_scope
+from src.presentation.api.response_sanitizer import strip_reasoning_blocks
 from src.presentation.api.schemas import AiChatRequest, AiChatResponse
 
 router = APIRouter(tags=["ai-chat"])
@@ -36,4 +37,5 @@ async def ai_chat(
             status_code=503, detail="LLM servisine ulaşılamadı, lütfen tekrar deneyin."
         ) from exc
 
-    return AiChatResponse(answer=response.content or "(yanıt üretilemedi)")
+    answer = strip_reasoning_blocks(response.content or "")
+    return AiChatResponse(answer=answer or "(yanıt üretilemedi)")
