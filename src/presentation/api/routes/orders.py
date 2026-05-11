@@ -9,8 +9,11 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.get("", response_model=list[OrderRead])
-async def list_orders(scope: RequestScope = Depends(get_scope)) -> list[OrderRead]:
-    orders = await scope.orders.list()
+async def list_orders(
+    status: str | None = None,
+    scope: RequestScope = Depends(get_scope),
+) -> list[OrderRead]:
+    orders = await scope.orders.list(status=status)
     return [OrderRead.from_domain(o) for o in orders]
 
 
