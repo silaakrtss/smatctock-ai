@@ -77,12 +77,20 @@ TOOL_DEFINITIONS: list[ToolDefinition] = [
         name="notify_customer",
         description=(
             "Müşteriye sipariş hakkında bildirim gönderir. "
-            "Yöneticinin onayı varsa veya kullanıcı açıkça istediyse kullan."
+            "Yöneticinin onayı varsa veya kullanıcı açıkça istediyse kullan. "
+            "Kullanıcı sadece müşteri adı verdiyse önce list_orders ile "
+            "order_id'yi türet."
         ),
         parameters={
             "type": "object",
             "properties": {
-                "order_id": {"type": "integer"},
+                "order_id": {
+                    "type": "integer",
+                    "description": (
+                        "Sipariş kimliği. Kullanıcı vermediyse list_orders "
+                        "ile müşteri adından türet."
+                    ),
+                },
                 "recipient": {"type": "string", "description": "Kanal adresi (örn. @ali)."},
                 "message": {"type": "string"},
             },
@@ -93,12 +101,20 @@ TOOL_DEFINITIONS: list[ToolDefinition] = [
         name="create_reorder_draft",
         description=(
             "Eşik altı bir ürün için tedarikçiye sipariş taslağı bildirimi gönderir. "
-            "Kullanıcı stok yenileme istediğinde kullan."
+            "Kullanıcı stok yenileme istediğinde kullan. "
+            "Kullanıcı yalnızca ürün adı verdiyse önce get_product_stock ile "
+            "product_id'yi öğren, sonra bu tool'u çağır."
         ),
         parameters={
             "type": "object",
             "properties": {
-                "product_id": {"type": "integer"},
+                "product_id": {
+                    "type": "integer",
+                    "description": (
+                        "Ürün kimliği. Kullanıcı vermediyse get_product_stock "
+                        "ile ürün adından türet."
+                    ),
+                },
                 "quantity": {"type": "integer", "description": "Sipariş edilecek adet."},
             },
             "required": ["product_id", "quantity"],
