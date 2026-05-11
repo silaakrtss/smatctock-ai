@@ -47,3 +47,6 @@ _Yok._
 |-------|----------|
 | [tdd-refactor-checklist](concepts/tdd-refactor-checklist.md) | TDD refactor adımında bakılacaklar — tam liste + 30 sn hızlı tarama (ADR-0011) |
 | [demo-akisi](concepts/demo-akisi.md) | Sunumda izlenebilecek tek hikâye — beş tema, adım adım ADR referansı |
+| [debug-setup-and-database](concepts/debug-setup-and-database.md) | Kurulum, Alembic migration, seed, SQLite kilidi (ADR-0006) |
+| [debug-llm-operations](concepts/debug-llm-operations.md) | LLM kotası, agent loop limiti, `logs_llm/`, `<think>` sanitizer (ADR-0005, ADR-0009) |
+| [debug-frontend-behavior](concepts/debug-frontend-behavior.md) | Dashboard SSE, markdown render, sessionStorage, palette (ADR-0010) |

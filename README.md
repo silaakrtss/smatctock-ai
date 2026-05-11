@@ -214,31 +214,16 @@ Bağımlılık yönü: `presentation → agent → application → domain`.
 
 ## Sorun Giderme
 
-**`/dashboard` boş, "Henüz bildirim yok" yazıyor.**
-Henüz bildirim üretilmediği için doğru — sohbet kutusundan
-*"Domates için 50 adet tedarik taslağı oluştur"* yaz. Dashboard'da
-yeni kart anında belirmeli.
+Karşılaştığın soruna göre uygun debug rehberine git:
 
-**Sohbette `<think>...</think>` görünüyor / markdown render olmuyor.**
-Bu sürümde sanitize edilir ve markdown render edilir. Tarayıcı cache
-yüzünden eski sürüm yüklenmiş olabilir; `Ctrl+Shift+R` ile sert
-yenileme dene.
+| Sorun türü | Rehber |
+|------------|--------|
+| Kurulum, migration, seed, SQLite kilidi, sıfırlama | [`docs/concepts/debug-setup-and-database.md`](docs/concepts/debug-setup-and-database.md) |
+| LLM kotası, agent loop limiti, çağrı logları, sağlayıcı geçişi, `<think>` bloğu | [`docs/concepts/debug-llm-operations.md`](docs/concepts/debug-llm-operations.md) |
+| Dashboard bildirim akışı, SSE, markdown render, sohbet kalıcılığı, palette | [`docs/concepts/debug-frontend-behavior.md`](docs/concepts/debug-frontend-behavior.md) |
 
-**`OperationalError: no such table: products`.**
-`make migrate` çalıştırılmamış. Yukarıdaki 4. adımı izle.
-
-**Sohbet sekmeyi değiştirince siliniyor.**
-Aynı sekmede değişiklik geçişlerinde `sessionStorage`'da kalır. Tarayıcı
-sekmesini kapatıp tekrar açtığında — yeni sekme/oturum demektir, geçmiş
-silinir (beklenen davranış).
-
-**LLM kotası doldu (HTTP 503).**
-Adapter 3 deneme exponential backoff yapıp `LLMRateLimitError` fırlatır.
-Birkaç dakika bekle veya `LLM_PROVIDER=gemini`'a geç (free tier cömert).
-
-**LLM çağrı geçmişini inceleme.**
-`logs_llm/YYYY-MM-DD.jsonl` her LLM çağrısının request + response'unu
-içerir (içsel debug için). Dosyalar `.gitignore`'dadır.
+Hızlı kurtarma: `make reset-db` DB'yi sıfırlar (migrate + seed); `Ctrl+Shift+R`
+tarayıcı cache'ini atlar.
 
 ---
 
