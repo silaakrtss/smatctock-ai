@@ -14,16 +14,53 @@
 
       <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
                x-data="productList()" x-init="load()">
-        <h2 class="font-display text-lg text-harvest-700 mb-3">Ürünler</h2>
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <h2 class="font-display text-lg text-harvest-700">Stok ve Envanter</h2>
+            <p class="text-xs text-harvest-500">Kritik eşikler, önerilen tedarik ve hızlı stok güncelleme.</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full bg-ember-500 text-white"
+                x-show="lowCount() > 0"
+                x-text="lowCount() + ' kritik'"></span>
+        </div>
 
-        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor…</p>
+        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor...</p>
         <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
 
         <ul class="divide-y divide-harvest-100" x-show="!loading && !error">
           <template x-for="p in products" :key="p.id">
-            <li class="py-2 flex justify-between text-sm">
-              <span class="text-harvest-700" x-text="p.name"></span>
-              <span class="font-medium" x-text="p.stock"></span>
+            <li class="py-3 space-y-2 text-sm">
+              <div class="flex justify-between gap-3">
+                <div>
+                  <div class="font-medium text-harvest-700" x-text="p.name"></div>
+                  <div class="text-xs text-harvest-500">
+                    Eşik: <span x-text="p.min_quantity ?? '-'"></span>
+                    <span x-show="p.suggested_reorder_quantity > 0">
+                      · Öneri: <span x-text="p.suggested_reorder_quantity"></span>
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-semibold text-harvest-900" x-text="p.stock"></div>
+                  <span class="text-xs px-2 py-0.5 rounded-full"
+                        :class="stockBadgeClass(p.status)"
+                        x-text="stockLabel(p.status)"></span>
+                </div>
+              </div>
+              <div class="flex gap-2" x-show="p.status !== 'ok'">
+                <button type="button"
+                        class="text-xs px-3 py-1.5 rounded-md bg-harvest-700 text-white hover:bg-harvest-600 disabled:opacity-50"
+                        :disabled="p.busy"
+                        @click="createReorderDraft(p)">
+                  Tedarik taslağı
+                </button>
+                <button type="button"
+                        class="text-xs px-3 py-1.5 rounded-md border border-harvest-200 text-harvest-700 hover:bg-harvest-50 disabled:opacity-50"
+                        :disabled="p.busy"
+                        @click="adjustStock(p, p.suggested_reorder_quantity || p.min_quantity || 1)">
+                  Stoğa ekle
+                </button>
+              </div>
             </li>
           </template>
           <template x-if="!loading && !error && products.length === 0">
@@ -36,7 +73,7 @@
                x-data="orderList()" x-init="load()">
         <h2 class="font-display text-lg text-harvest-700 mb-3">Siparişler</h2>
 
-        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor…</p>
+        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor...</p>
         <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
 
         <ul class="divide-y divide-harvest-100" x-show="!loading && !error">
@@ -58,9 +95,9 @@
     </div>
 
     <aside class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
-      <h2 class="font-display text-lg text-harvest-700 mb-3">🔔 Canlı Bildirimler</h2>
+      <h2 class="font-display text-lg text-harvest-700 mb-3">Canlı Bildirimler</h2>
       <p class="text-xs mb-3" :class="connected ? 'text-harvest-500' : 'text-ember-600'">
-        <span x-text="connected ? 'SSE bağlantısı açık.' : 'Bağlantı kuruluyor…'"></span>
+        <span x-text="connected ? 'SSE bağlantısı açık.' : 'Bağlantı kuruluyor...'"></span>
       </p>
 
       <div class="space-y-1">
@@ -93,15 +130,57 @@
       products: [],
       loading: true,
       error: "",
+      lowCount() {
+        return this.products.filter((p) => p.status !== "ok").length;
+      },
+      stockLabel(status) {
+        return { ok: "Yeterli", low: "Eşik altı", out: "Tükendi" }[status] || status;
+      },
+      stockBadgeClass(status) {
+        if (status === "out") return "bg-ember-600 text-white";
+        if (status === "low") return "bg-ember-500 text-white";
+        return "bg-harvest-50 text-harvest-700";
+      },
       async load() {
         try {
-          const res = await fetch("/products");
+          const res = await fetch("/inventory");
           if (!res.ok) throw new Error("HTTP " + res.status);
-          this.products = await res.json();
+          this.products = (await res.json()).map((p) => ({ ...p, busy: false }));
         } catch (err) {
           this.error = "Ürünler yüklenemedi.";
         } finally {
           this.loading = false;
+        }
+      },
+      async adjustStock(product, delta) {
+        product.busy = true;
+        try {
+          const res = await fetch(`/inventory/${product.id}/adjust`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ delta }),
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          await this.load();
+        } catch (err) {
+          this.error = "Stok güncellenemedi.";
+        } finally {
+          product.busy = false;
+        }
+      },
+      async createReorderDraft(product) {
+        product.busy = true;
+        try {
+          const res = await fetch(`/inventory/${product.id}/reorder-draft`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: product.suggested_reorder_quantity || null }),
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+        } catch (err) {
+          this.error = "Tedarik taslağı oluşturulamadı.";
+        } finally {
+          product.busy = false;
         }
       },
     };

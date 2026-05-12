@@ -11,7 +11,14 @@ from src.infrastructure.composition import (
     dispose_container,
     register_scheduler_jobs,
 )
-from src.presentation.api.routes import ai_chat, notifications, orders, products, shipments
+from src.presentation.api.routes import (
+    ai_chat,
+    inventory,
+    notifications,
+    orders,
+    products,
+    shipments,
+)
 from src.presentation.api.routes import pages as pages_router
 from src.presentation.config.settings import get_settings
 
@@ -43,6 +50,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(products.router)
+    app.include_router(inventory.router)
     app.include_router(orders.router)
     app.include_router(shipments.router)
     app.include_router(notifications.router)

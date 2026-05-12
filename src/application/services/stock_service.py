@@ -8,6 +8,7 @@ from src.application.services.notification_service import (
 )
 from src.domain.notifications.notification import Notification, NotificationChannel
 from src.domain.products.product import Product
+from src.domain.stock.stock_threshold import StockThreshold
 
 
 class ProductNotFoundError(Exception):
@@ -18,12 +19,42 @@ class SupplierNotConfiguredError(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class StockInventoryItem:
+    product: Product
+    threshold: StockThreshold | None
+    status: str
+    suggested_reorder_quantity: int
+
+    @property
+    def min_quantity(self) -> int | None:
+        return self.threshold.min_quantity if self.threshold else None
+
+
 @dataclass
 class StockService:
     products: ProductRepository
     thresholds: StockThresholdRepository
     notifications: NotificationService | None = field(default=None)
     supplier_recipient: str | None = field(default=None)
+
+    async def inventory_overview(self) -> list[StockInventoryItem]:
+        products = await self.products.list_all()
+        overview: list[StockInventoryItem] = []
+        for product in products:
+            threshold = await self.thresholds.get_for_product(product.id)
+            overview.append(
+                StockInventoryItem(
+                    product=product,
+                    threshold=threshold,
+                    status=_stock_status(product=product, threshold=threshold),
+                    suggested_reorder_quantity=_suggest_reorder_quantity(
+                        product=product,
+                        threshold=threshold,
+                    ),
+                )
+            )
+        return overview
 
     async def find_below_threshold(self) -> list[Product]:
         all_products = await self.products.list_all()
@@ -82,3 +113,17 @@ class StockService:
             ),
         )
         return await self.notifications.dispatch(draft)
+
+
+def _stock_status(*, product: Product, threshold: StockThreshold | None) -> str:
+    if product.stock == 0:
+        return "out"
+    if threshold is not None and threshold.is_breached_by(product.stock):
+        return "low"
+    return "ok"
+
+
+def _suggest_reorder_quantity(*, product: Product, threshold: StockThreshold | None) -> int:
+    if threshold is None or not threshold.is_breached_by(product.stock):
+        return 0
+    return max(threshold.min_quantity, (threshold.min_quantity * 2) - product.stock)

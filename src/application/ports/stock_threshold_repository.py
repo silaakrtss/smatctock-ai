@@ -9,3 +9,6 @@ class StockThresholdRepository(ABC):
 
     @abstractmethod
     async def list_all(self) -> list[StockThreshold]: ...
+
+    @abstractmethod
+    async def save(self, threshold: StockThreshold) -> None: ...

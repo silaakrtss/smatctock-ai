@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from src.application.services.stock_service import StockInventoryItem
 from src.domain.notifications.notification import Notification
 from src.domain.orders.order import Order
 from src.domain.products.product import Product
@@ -25,6 +26,34 @@ class ProductRead(BaseModel):
     @classmethod
     def from_domain(cls, product: Product) -> "ProductRead":
         return cls(id=product.id, name=product.name, stock=product.stock)
+
+
+class InventoryItemRead(BaseModel):
+    id: int
+    name: str
+    stock: int
+    min_quantity: int | None
+    status: str
+    suggested_reorder_quantity: int
+
+    @classmethod
+    def from_service(cls, item: StockInventoryItem) -> "InventoryItemRead":
+        return cls(
+            id=item.product.id,
+            name=item.product.name,
+            stock=item.product.stock,
+            min_quantity=item.min_quantity,
+            status=item.status,
+            suggested_reorder_quantity=item.suggested_reorder_quantity,
+        )
+
+
+class StockAdjustmentRequest(BaseModel):
+    delta: int
+
+
+class ReorderDraftRequest(BaseModel):
+    quantity: int | None = None
 
 
 class OrderRead(BaseModel):

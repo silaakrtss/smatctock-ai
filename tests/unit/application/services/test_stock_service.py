@@ -90,6 +90,65 @@ class FakeThresholdRepository(StockThresholdRepository):
     async def list_all(self) -> list[StockThreshold]:
         return list(self._by_product.values())
 
+    async def save(self, threshold: StockThreshold) -> None:
+        self._by_product[threshold.product_id] = threshold
+
+
+class TestInventoryOverview:
+    async def test_ok_status_when_above_threshold(self):
+        products = [Product(id=1, name="Salatalık", stock=120)]
+        thresholds = [StockThreshold(product_id=1, min_quantity=40)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository(thresholds),
+        )
+
+        overview = await service.inventory_overview()
+
+        assert len(overview) == 1
+        assert overview[0].status == "ok"
+        assert overview[0].suggested_reorder_quantity == 0
+
+    async def test_low_status_and_suggestion_when_below_threshold(self):
+        products = [Product(id=1, name="Domates", stock=8)]
+        thresholds = [StockThreshold(product_id=1, min_quantity=20)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository(thresholds),
+        )
+
+        overview = await service.inventory_overview()
+
+        assert overview[0].status == "low"
+        # max(20, 20*2 - 8) = max(20, 32) = 32
+        assert overview[0].suggested_reorder_quantity == 32
+
+    async def test_out_status_when_stock_is_zero(self):
+        products = [Product(id=1, name="Domates", stock=0)]
+        thresholds = [StockThreshold(product_id=1, min_quantity=20)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository(thresholds),
+        )
+
+        overview = await service.inventory_overview()
+
+        assert overview[0].status == "out"
+        assert overview[0].suggested_reorder_quantity == 40  # max(20, 40-0)
+
+    async def test_no_threshold_shows_ok_and_zero_suggestion(self):
+        products = [Product(id=1, name="Biber", stock=5)]
+        service = StockService(
+            products=FakeProductRepository(products),
+            thresholds=FakeThresholdRepository([]),
+        )
+
+        overview = await service.inventory_overview()
+
+        assert overview[0].status == "ok"
+        assert overview[0].min_quantity is None
+        assert overview[0].suggested_reorder_quantity == 0
+
 
 class TestFindBelowThreshold:
     async def test_returns_only_products_below_their_threshold(self):

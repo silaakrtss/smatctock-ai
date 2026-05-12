@@ -52,6 +52,10 @@ class _FakeThresholdRepo(StockThresholdRepository):
     async def list_all(self) -> list[StockThreshold]:
         return list(self._by_product.values())
 
+    async def save(self, threshold: StockThreshold) -> None:
+        self._by_product[threshold.product_id] = threshold
+
+
 
 class _FakeNotificationRepo(NotificationRepository):
     def __init__(self) -> None:

@@ -37,7 +37,14 @@ def register_default_tools(
 def _build_get_product_stock(stock: StockService) -> Handler:
     async def handler(args: dict[str, Any]) -> ToolResult:
         product = await stock.get_by_name(args["product_name"])
-        return ToolResult.success(_product_payload(product))
+        # inventory_overview'dan eşik ve durum bilgisini de al
+        overview = await stock.inventory_overview()
+        item = next((i for i in overview if i.product.id == product.id), None)
+        payload = _product_payload(product)
+        if item is not None:
+            payload["min_quantity"] = item.min_quantity
+            payload["status"] = item.status
+        return ToolResult.success(payload)
 
     return handler
 

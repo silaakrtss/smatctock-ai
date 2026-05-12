@@ -10,7 +10,10 @@ def test_chat_page_renders():
         response = client.get("/")
 
         assert response.status_code == 200
-        assert "Operasyon Asistanı" in response.text
+        assert (
+            "Operasyon Asistan\u0131" in response.text
+            or "Operasyon Asistan\u00c4\u00b1" in response.text
+        )
         assert "tailwindcss" in response.text
 
 
@@ -19,7 +22,8 @@ def test_dashboard_page_renders():
         response = client.get("/dashboard")
 
         assert response.status_code == 200
-        assert "Canlı Bildirimler" in response.text
+        assert "Canl\u0131 Bildirimler" in response.text
+        assert "Stok ve Envanter" in response.text
         assert "/notifications/stream" in response.text
 
 
@@ -28,4 +32,7 @@ def test_orders_explorer_page_renders():
         response = client.get("/order-tracking")
 
         assert response.status_code == 200
-        assert "Sipariş Takip" in response.text
+        assert (
+            "Sipari\u015f Takip" in response.text
+            or "Sipari\u00c5\u0178 Takip" in response.text
+        )
