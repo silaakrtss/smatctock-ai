@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 from src.application.services.stock_service import StockInventoryItem
+from src.application.services.workflow_service import DailyWorkflowPlan, WorkflowTask
 from src.domain.notifications.notification import Notification
 from src.domain.orders.order import Order
 from src.domain.products.product import Product
@@ -143,6 +144,46 @@ class NotificationRead(BaseModel):
             body=notification.body,
             created_at=notification.created_at,
             status=notification.status.value,
+        )
+
+
+class WorkflowTaskRead(BaseModel):
+    id: str
+    role: str
+    title: str
+    detail: str
+    priority: str
+    related_order_id: int | None
+    tracking_number: str | None
+
+    @classmethod
+    def from_service(cls, task: WorkflowTask) -> "WorkflowTaskRead":
+        return cls(
+            id=task.id,
+            role=task.role,
+            title=task.title,
+            detail=task.detail,
+            priority=task.priority,
+            related_order_id=task.related_order_id,
+            tracking_number=task.tracking_number,
+        )
+
+
+class DailyWorkflowPlanRead(BaseModel):
+    day: datetime
+    total_tasks: int
+    packing_tasks: list[WorkflowTaskRead]
+    shipping_tasks: list[WorkflowTaskRead]
+    manager_tasks: list[WorkflowTaskRead]
+
+    @classmethod
+    def from_service(cls, plan: DailyWorkflowPlan) -> "DailyWorkflowPlanRead":
+        return cls(
+            day=plan.day,
+            total_tasks=plan.total_tasks,
+            packing_tasks=[WorkflowTaskRead.from_service(task) for task in plan.packing_tasks],
+            shipping_tasks=[WorkflowTaskRead.from_service(task) for task in plan.shipping_tasks],
+            manager_tasks=[WorkflowTaskRead.from_service(task) for task in plan.manager_tasks],
         )
 
 

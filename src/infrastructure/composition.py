@@ -44,6 +44,7 @@ class AppContainer:
         from src.application.services.order_service import OrderService
         from src.application.services.shipping_service import ShippingService
         from src.application.services.stock_service import StockService
+        from src.application.services.workflow_service import WorkflowService
         from src.infrastructure.db.repositories.notification_repository import (
             SqlAlchemyNotificationRepository,
         )
@@ -80,6 +81,14 @@ class AppContainer:
         )
         orders = OrderService(orders=SqlAlchemyOrderRepository(session))
         shipping = ShippingService(shipments=SqlAlchemyShipmentRepository(session))
+        workflow = WorkflowService(
+            orders=orders,
+            shipping=shipping,
+            notifications=notifications,
+            warehouse_recipient=self.settings.warehouse_recipient,
+            courier_recipient=self.settings.courier_recipient,
+            manager_recipient=self.settings.manager_recipient,
+        )
 
         registry = ToolRegistry()
         register_default_tools(
@@ -105,6 +114,7 @@ class AppContainer:
             stock=stock,
             orders=orders,
             shipping=shipping,
+            workflow=workflow,
             notifications=notifications,
             notification_repo=notification_repo,
             agent_loop=loop,
@@ -121,6 +131,7 @@ class RequestScope:
     stock: Any
     orders: Any
     shipping: Any
+    workflow: Any
     notifications: Any
     notification_repo: Any
     agent_loop: AgentLoop
@@ -175,6 +186,10 @@ async def register_scheduler_jobs(container: AppContainer) -> None:
         StockThresholdJobContext,
         build_check_stock_thresholds_job,
     )
+    from src.infrastructure.scheduler.jobs.daily_workflow_dispatch import (
+        DailyWorkflowJobContext,
+        build_daily_workflow_dispatch_job,
+    )
 
     scheduler = ApschedulerAdapter(scheduler=AsyncScheduler())
     container.scheduler = scheduler
@@ -200,6 +215,14 @@ async def register_scheduler_jobs(container: AppContainer) -> None:
                 now=_utcnow,
             )
 
+    async def workflow_context() -> DailyWorkflowJobContext:
+        async with container.session_factory() as session:
+            scope = await container.build_request_scope(session)
+            return DailyWorkflowJobContext(
+                workflow=scope.workflow,
+                now=_utcnow,
+            )
+
     await scheduler.add_job(
         build_check_stock_thresholds_job(stock_context),
         trigger=_parse_cron(settings.scheduler_stock_check_cron),
@@ -209,6 +232,11 @@ async def register_scheduler_jobs(container: AppContainer) -> None:
         build_check_shipping_delays_job(shipping_context),
         trigger=_parse_cron(settings.scheduler_shipping_check_cron),
         job_id="check_shipping_delays",
+    )
+    await scheduler.add_job(
+        build_daily_workflow_dispatch_job(workflow_context),
+        trigger=_parse_cron(settings.scheduler_morning_briefing_cron),
+        job_id="dispatch_daily_workflow",
     )
 
 

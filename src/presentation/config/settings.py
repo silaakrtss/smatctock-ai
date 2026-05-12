@@ -39,6 +39,8 @@ class Settings(BaseSettings):
 
     manager_recipient: str = Field(default="@manager")
     supplier_recipient: str = Field(default="@tedarik")
+    warehouse_recipient: str = Field(default="@depo")
+    courier_recipient: str = Field(default="@kurye")
 
     scheduler_enabled: bool = Field(default=False)
 

@@ -18,6 +18,7 @@ from src.presentation.api.routes import (
     orders,
     products,
     shipments,
+    workflow,
 )
 from src.presentation.api.routes import pages as pages_router
 from src.presentation.config.settings import get_settings
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(inventory.router)
     app.include_router(orders.router)
     app.include_router(shipments.router)
+    app.include_router(workflow.router)
     app.include_router(notifications.router)
     app.include_router(ai_chat.router)
     app.include_router(pages_router.router)

@@ -219,6 +219,81 @@
       </template>
     </div>
   </article>
+
+  <article class="dashboard-panel">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-eyebrow">İş Akışı ve Görev Yönetimi</p>
+        <h2 class="font-display text-2xl text-harvest-900">Günlük görev dağıtımı</h2>
+        <p class="mt-1 text-sm text-harvest-600">Depo, kargo ve yönetici aksiyonları sistem tarafından role göre ayrılır.</p>
+      </div>
+      <button type="button"
+              class="dashboard-button-primary"
+              :disabled="workflowDispatching"
+              @click="dispatchWorkflow()">
+        Ekibe gönder
+      </button>
+    </div>
+
+    <p class="mt-5 text-sm text-harvest-500 italic" x-show="workflowLoading">Yükleniyor...</p>
+    <p class="mt-5 text-sm text-ember-600" x-show="workflowError" x-text="workflowError"></p>
+
+    <div class="mt-5 grid gap-4 lg:grid-cols-3" x-show="!workflowLoading && !workflowError && workflowPlan">
+      <div class="workflow-column">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-lg text-harvest-900">Depo</h3>
+          <span class="dashboard-chip bg-cream-50 text-harvest-700" x-text="workflowPlan.packing_tasks.length + ' görev'"></span>
+        </div>
+        <div class="mt-3 space-y-2">
+          <template x-for="task in workflowPlan.packing_tasks" :key="task.id">
+            <div class="workflow-task" :data-priority="task.priority">
+              <div class="font-semibold text-harvest-900" x-text="task.title"></div>
+              <div class="mt-1 text-xs text-harvest-500" x-text="task.detail"></div>
+            </div>
+          </template>
+          <template x-if="workflowPlan.packing_tasks.length === 0">
+            <div class="text-sm text-harvest-500">Depo görevi yok.</div>
+          </template>
+        </div>
+      </div>
+
+      <div class="workflow-column">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-lg text-harvest-900">Kargo</h3>
+          <span class="dashboard-chip bg-sky-50 text-sky-800" x-text="workflowPlan.shipping_tasks.length + ' görev'"></span>
+        </div>
+        <div class="mt-3 space-y-2">
+          <template x-for="task in workflowPlan.shipping_tasks" :key="task.id">
+            <div class="workflow-task" :data-priority="task.priority">
+              <div class="font-semibold text-harvest-900" x-text="task.title"></div>
+              <div class="mt-1 text-xs text-harvest-500" x-text="task.detail"></div>
+            </div>
+          </template>
+          <template x-if="workflowPlan.shipping_tasks.length === 0">
+            <div class="text-sm text-harvest-500">Kargo görevi yok.</div>
+          </template>
+        </div>
+      </div>
+
+      <div class="workflow-column">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display text-lg text-harvest-900">Yönetici</h3>
+          <span class="dashboard-chip bg-amber-50 text-amber-800" x-text="workflowPlan.manager_tasks.length + ' aksiyon'"></span>
+        </div>
+        <div class="mt-3 space-y-2">
+          <template x-for="task in workflowPlan.manager_tasks" :key="task.id">
+            <div class="workflow-task" :data-priority="task.priority">
+              <div class="font-semibold text-harvest-900" x-text="task.title"></div>
+              <div class="mt-1 text-xs text-harvest-500" x-text="task.detail"></div>
+            </div>
+          </template>
+          <template x-if="workflowPlan.manager_tasks.length === 0">
+            <div class="text-sm text-harvest-500">Yönetici aksiyonu yok.</div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </article>
 </section>
 
 <script>
@@ -235,13 +310,17 @@
       orders: [],
       activeShipments: [],
       delayedShipments: [],
+      workflowPlan: null,
       notifications: [],
       inventoryLoading: true,
       ordersLoading: true,
       shipmentsLoading: true,
+      workflowLoading: true,
+      workflowDispatching: false,
       inventoryError: "",
       ordersError: "",
       shipmentsError: "",
+      workflowError: "",
       connected: false,
       source: null,
 
@@ -250,6 +329,7 @@
           this.loadInventory(),
           this.loadOrders(),
           this.loadShipments(),
+          this.loadWorkflow(),
           this.loadNotifications(),
         ]);
         this.openSource();
@@ -306,6 +386,18 @@
           this.shipmentsError = "Kargo verileri yüklenemedi.";
         } finally {
           this.shipmentsLoading = false;
+        }
+      },
+
+      async loadWorkflow() {
+        try {
+          const res = await fetch("/workflow/daily-plan");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.workflowPlan = await res.json();
+        } catch (err) {
+          this.workflowError = "Görev planı yüklenemedi.";
+        } finally {
+          this.workflowLoading = false;
         }
       },
 
@@ -406,6 +498,25 @@
           this.inventoryError = "Tedarik taslağı oluşturulamadı.";
         } finally {
           product.busy = false;
+        }
+      },
+
+      async dispatchWorkflow() {
+        this.workflowDispatching = true;
+        this.workflowError = "";
+        try {
+          const res = await fetch("/workflow/dispatch", { method: "POST" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const notifications = await res.json();
+          for (const notification of notifications.reverse()) {
+            if (!this.notifications.some((n) => n.id === notification.id)) {
+              this.notifications.unshift(notification);
+            }
+          }
+        } catch (err) {
+          this.workflowError = "Görevler ekibe gönderilemedi.";
+        } finally {
+          this.workflowDispatching = false;
         }
       },
 
