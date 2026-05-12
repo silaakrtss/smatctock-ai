@@ -13,6 +13,9 @@ class ShipmentNotFoundError(Exception):
 class ShippingService:
     shipments: ShipmentRepository
 
+    async def list_active_shipments(self) -> list[Shipment]:
+        return await self.shipments.list_active()
+
     async def find_delayed_shipments(self, now: datetime) -> list[Shipment]:
         active = await self.shipments.list_active()
         return [s for s in active if s.is_delayed(now=now)]

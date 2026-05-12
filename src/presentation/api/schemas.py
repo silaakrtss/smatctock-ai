@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
 
@@ -94,6 +94,36 @@ class ShipmentRead(BaseModel):
         )
 
 
+class ShipmentOverviewRead(BaseModel):
+    id: int
+    order_id: int
+    carrier: str
+    tracking_number: str
+    status: str
+    expected_delivery_at: datetime
+    delivered_at: datetime | None
+    is_delayed: bool
+    minutes_until_expected: int
+
+    @classmethod
+    def from_domain(cls, shipment: Shipment, *, now: datetime) -> "ShipmentOverviewRead":
+        expected_delivery_at = _as_utc(shipment.expected_delivery_at)
+        delivered_at = _as_utc(shipment.delivered_at) if shipment.delivered_at else None
+        current_time = _as_utc(now)
+        delta = expected_delivery_at - current_time
+        return cls(
+            id=shipment.id,
+            order_id=shipment.order_id,
+            carrier=shipment.carrier,
+            tracking_number=shipment.tracking_number,
+            status=shipment.status.value,
+            expected_delivery_at=expected_delivery_at,
+            delivered_at=delivered_at,
+            is_delayed=shipment.is_delayed(now=current_time),
+            minutes_until_expected=int(delta.total_seconds() // 60),
+        )
+
+
 class NotificationRead(BaseModel):
     id: int
     channel: str
@@ -114,3 +144,9 @@ class NotificationRead(BaseModel):
             created_at=notification.created_at,
             status=notification.status.value,
         )
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value

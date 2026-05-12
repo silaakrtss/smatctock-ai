@@ -245,7 +245,8 @@
 }
 
 .tracking-stock-row,
-.tracking-order-row {
+.tracking-order-row,
+.shipment-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -258,14 +259,16 @@
 }
 
 .tracking-stock-row:hover,
-.tracking-order-row:hover {
+.tracking-order-row:hover,
+.shipment-row:hover {
   transform: translateY(-1px);
   border-color: #cfddae;
   box-shadow: 0 14px 30px rgba(42, 54, 20, 0.08);
 }
 
 .tracking-stock-row[data-status="low"],
-.tracking-stock-row[data-status="out"] {
+.tracking-stock-row[data-status="out"],
+.shipment-row[data-delayed="true"] {
   border-color: rgba(217, 110, 42, 0.42);
   background: linear-gradient(90deg, #ffffff 0%, #fff8ed 100%);
 }

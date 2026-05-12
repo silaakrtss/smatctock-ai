@@ -38,8 +38,8 @@
           <div class="mt-2 text-3xl font-display" x-text="totalSuggestedReorder()"></div>
         </div>
         <div class="dashboard-kpi bg-white/10 text-white ring-white/15">
-          <div class="text-xs text-cream-100">Bildirim</div>
-          <div class="mt-2 text-3xl font-display" x-text="notifications.length"></div>
+          <div class="text-xs text-cream-100">Geciken kargo</div>
+          <div class="mt-2 text-3xl font-display" x-text="delayedShipments.length"></div>
         </div>
       </div>
     </div>
@@ -178,6 +178,47 @@
       </div>
     </article>
   </div>
+
+  <article class="dashboard-panel">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-eyebrow">Kargo Süreçleri</p>
+        <h2 class="font-display text-2xl text-harvest-900">Teslimat riskleri</h2>
+        <p class="mt-1 text-sm text-harvest-600">Aktif kargoları izle, gecikmeleri müşteri şikayetinden önce yakala.</p>
+      </div>
+      <span class="dashboard-chip" :class="delayedShipments.length > 0 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'"
+            x-text="delayedShipments.length > 0 ? delayedShipments.length + ' gecikme' : 'Gecikme yok'"></span>
+    </div>
+
+    <p class="mt-5 text-sm text-harvest-500 italic" x-show="shipmentsLoading">Yükleniyor...</p>
+    <p class="mt-5 text-sm text-ember-600" x-show="shipmentsError" x-text="shipmentsError"></p>
+
+    <div class="mt-5 grid gap-3 md:grid-cols-2" x-show="!shipmentsLoading && !shipmentsError">
+      <template x-for="s in activeShipments" :key="s.id">
+        <div class="shipment-row" :data-delayed="s.is_delayed">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-semibold text-harvest-900">
+                <span class="text-harvest-500">#</span><span x-text="s.order_id"></span>
+                <span> · </span><span x-text="s.carrier"></span>
+              </h3>
+              <span class="dashboard-chip" :class="s.is_delayed ? 'bg-amber-50 text-amber-800' : 'bg-sky-50 text-sky-800'"
+                    x-text="s.is_delayed ? 'Gecikme riski' : 'Yolda'"></span>
+            </div>
+            <div class="mt-2 text-xs text-harvest-500">
+              Takip: <strong class="text-harvest-900" x-text="s.tracking_number"></strong>
+              · Beklenen: <strong class="text-harvest-900" x-text="formatDate(s.expected_delivery_at)"></strong>
+            </div>
+          </div>
+          <div class="mt-3 text-sm font-semibold" :class="s.is_delayed ? 'text-amber-700' : 'text-sky-800'"
+               x-text="shipmentEtaLabel(s)"></div>
+        </div>
+      </template>
+      <template x-if="activeShipments.length === 0">
+        <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Aktif kargo yok.</div>
+      </template>
+    </div>
+  </article>
 </section>
 
 <script>
@@ -192,16 +233,25 @@
     return {
       products: [],
       orders: [],
+      activeShipments: [],
+      delayedShipments: [],
       notifications: [],
       inventoryLoading: true,
       ordersLoading: true,
+      shipmentsLoading: true,
       inventoryError: "",
       ordersError: "",
+      shipmentsError: "",
       connected: false,
       source: null,
 
       async start() {
-        await Promise.all([this.loadInventory(), this.loadOrders(), this.loadNotifications()]);
+        await Promise.all([
+          this.loadInventory(),
+          this.loadOrders(),
+          this.loadShipments(),
+          this.loadNotifications(),
+        ]);
         this.openSource();
         document.addEventListener("visibilitychange", this._onVisibility = () => {
           if (document.visibilityState === "hidden") {
@@ -241,6 +291,22 @@
           const res = await fetch("/notifications");
           if (res.ok) this.notifications = await res.json();
         } catch (err) { /* sessiz */ }
+      },
+
+      async loadShipments() {
+        try {
+          const [activeRes, delayedRes] = await Promise.all([
+            fetch("/shipments/active"),
+            fetch("/shipments/delayed"),
+          ]);
+          if (!activeRes.ok || !delayedRes.ok) throw new Error("HTTP");
+          this.activeShipments = await activeRes.json();
+          this.delayedShipments = await delayedRes.json();
+        } catch (err) {
+          this.shipmentsError = "Kargo verileri yüklenemedi.";
+        } finally {
+          this.shipmentsLoading = false;
+        }
       },
 
       lowCount() {
@@ -297,6 +363,15 @@
         } catch (err) {
           return value;
         }
+      },
+      shipmentEtaLabel(shipment) {
+        const minutes = shipment.minutes_until_expected;
+        if (shipment.is_delayed) {
+          const overdue = Math.abs(minutes);
+          return `${Math.ceil(overdue / 60)} saat gecikti`;
+        }
+        if (minutes < 60) return `${Math.max(0, minutes)} dk kaldı`;
+        return `${Math.ceil(minutes / 60)} saat kaldı`;
       },
 
       async adjustStock(product, delta) {

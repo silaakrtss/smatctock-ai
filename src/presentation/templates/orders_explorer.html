@@ -50,7 +50,7 @@
     </article>
   </template>
 
-  <div class="grid gap-4 md:grid-cols-4">
+  <div class="grid gap-4 md:grid-cols-5">
     <div class="tracking-kpi">
       <div class="text-xs text-harvest-500">Toplam sipariş</div>
       <div class="mt-2 font-display text-3xl text-harvest-900" x-text="allOrders.length"></div>
@@ -66,6 +66,10 @@
     <div class="tracking-kpi">
       <div class="text-xs text-harvest-500">Teslim edildi</div>
       <div class="mt-2 font-display text-3xl text-emerald-700" x-text="countByStatus('delivered')"></div>
+    </div>
+    <div class="tracking-kpi">
+      <div class="text-xs text-harvest-500">Geciken kargo</div>
+      <div class="mt-2 font-display text-3xl text-ember-600" x-text="delayedShipments.length"></div>
     </div>
   </div>
 
@@ -129,7 +133,15 @@
               <div class="text-xs text-harvest-500" x-text="formatDate(o.created_at)"></div>
             </div>
           </div>
-          <span class="dashboard-chip" :class="orderBadgeClass(o.status)" x-text="statusLabel(o.status)"></span>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button type="button"
+                    class="dashboard-button-secondary"
+                    x-show="o.status === 'in_shipping'"
+                    @click="lookupShipment(o.id)">
+              Kargoyu aç
+            </button>
+            <span class="dashboard-chip" :class="orderBadgeClass(o.status)" x-text="statusLabel(o.status)"></span>
+          </div>
         </div>
       </template>
       <template x-if="orders.length === 0">
@@ -137,6 +149,70 @@
       </template>
     </div>
   </div>
+
+  <article class="dashboard-panel">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-eyebrow">Kargo Süreçleri</p>
+        <h2 class="font-display text-2xl text-harvest-900">Kargo takip ve gecikme uyarıları</h2>
+        <p class="mt-1 text-sm text-harvest-600">Aktif kargolar, beklenen teslim zamanı ve gecikme riski tek listede.</p>
+      </div>
+      <span class="dashboard-chip" :class="delayedShipments.length > 0 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'"
+            x-text="delayedShipments.length > 0 ? delayedShipments.length + ' gecikme' : 'Gecikme yok'"></span>
+    </div>
+
+    <p class="mt-5 text-sm text-harvest-500 italic" x-show="shipmentsLoading">Yükleniyor...</p>
+    <p class="mt-5 text-sm text-ember-600" x-show="shipmentsError" x-text="shipmentsError"></p>
+
+    <template x-if="selectedShipment">
+      <div class="tracking-result mt-5">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wide text-harvest-500">Seçili kargo</p>
+          <div class="mt-1 font-display text-2xl text-harvest-900">
+            <span class="text-harvest-500">#</span><span x-text="selectedShipment.order_id"></span>
+            <span> · </span><span x-text="selectedShipment.carrier"></span>
+          </div>
+          <div class="mt-1 text-sm text-harvest-500">
+            Takip: <span x-text="selectedShipment.tracking_number"></span>
+            · Beklenen: <span x-text="formatDate(selectedShipment.expected_delivery_at)"></span>
+          </div>
+        </div>
+        <span class="dashboard-chip" :class="selectedShipment.status === 'delivered' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-800'"
+              x-text="shipmentStatusLabel(selectedShipment.status)"></span>
+      </div>
+    </template>
+
+    <div class="mt-5 grid gap-3 md:grid-cols-2" x-show="!shipmentsLoading && !shipmentsError">
+      <template x-for="s in activeShipments" :key="s.id">
+        <div class="shipment-row" :data-delayed="s.is_delayed">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-semibold text-harvest-900">
+                <span class="text-harvest-500">#</span><span x-text="s.order_id"></span>
+                <span> · </span><span x-text="s.carrier"></span>
+              </h3>
+              <span class="dashboard-chip" :class="s.is_delayed ? 'bg-amber-50 text-amber-800' : 'bg-sky-50 text-sky-800'"
+                    x-text="s.is_delayed ? 'Gecikme riski' : 'Yolda'"></span>
+            </div>
+            <div class="mt-2 text-xs text-harvest-500">
+              Takip: <strong class="text-harvest-900" x-text="s.tracking_number"></strong>
+              · Beklenen: <strong class="text-harvest-900" x-text="formatDate(s.expected_delivery_at)"></strong>
+            </div>
+            <div class="mt-3 text-sm font-semibold" :class="s.is_delayed ? 'text-amber-700' : 'text-sky-800'"
+                 x-text="shipmentEtaLabel(s)"></div>
+          </div>
+          <button type="button"
+                  class="dashboard-button-primary"
+                  @click="markShipmentDelivered(s)">
+            Teslim edildi
+          </button>
+        </div>
+      </template>
+      <template x-if="activeShipments.length === 0">
+        <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Aktif kargo yok.</div>
+      </template>
+    </div>
+  </article>
 </section>
 
 <script>
@@ -160,14 +236,19 @@
       products: [],
       orders: [],
       allOrders: [],
+      activeShipments: [],
+      delayedShipments: [],
+      selectedShipment: null,
       loading: false,
+      shipmentsLoading: true,
       error: "",
+      shipmentsError: "",
       lookupId: "",
       lookupResult: null,
       lookupError: "",
 
       async init() {
-        await this.loadAllOrders();
+        await Promise.all([this.loadAllOrders(), this.loadShipments()]);
         await this.selectTab("stock");
       },
 
@@ -210,6 +291,22 @@
         return groups.flat();
       },
 
+      async loadShipments() {
+        this.shipmentsLoading = true;
+        try {
+          const [active, delayed] = await Promise.all([
+            this.fetchJson("/shipments/active"),
+            this.fetchJson("/shipments/delayed"),
+          ]);
+          this.activeShipments = active;
+          this.delayedShipments = delayed;
+        } catch (err) {
+          this.shipmentsError = "Kargo verileri yüklenemedi.";
+        } finally {
+          this.shipmentsLoading = false;
+        }
+      },
+
       async lookupOne() {
         this.lookupError = "";
         this.lookupResult = null;
@@ -222,8 +319,34 @@
           }
           if (!res.ok) throw new Error("HTTP " + res.status);
           this.lookupResult = await res.json();
+          await this.lookupShipment(this.lookupResult.id, { silentNotFound: true });
         } catch (err) {
           this.lookupError = "Sorgu başarısız.";
+        }
+      },
+
+      async lookupShipment(orderId, options = {}) {
+        try {
+          const res = await fetch("/shipments/by-order/" + orderId);
+          if (res.status === 404 && options.silentNotFound) {
+            this.selectedShipment = null;
+            return;
+          }
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.selectedShipment = await res.json();
+        } catch (err) {
+          if (!options.silentNotFound) this.shipmentsError = "Kargo detayı bulunamadı.";
+        }
+      },
+
+      async markShipmentDelivered(shipment) {
+        try {
+          const res = await fetch(`/shipments/${shipment.id}/delivered`, { method: "POST" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.selectedShipment = await res.json();
+          await this.loadShipments();
+        } catch (err) {
+          this.shipmentsError = "Kargo teslim edildi olarak işaretlenemedi.";
         }
       },
 
@@ -272,6 +395,18 @@
         } catch (err) {
           return value;
         }
+      },
+      shipmentStatusLabel(status) {
+        return { dispatched: "Yolda", delivered: "Teslim edildi" }[status] || status;
+      },
+      shipmentEtaLabel(shipment) {
+        const minutes = shipment.minutes_until_expected;
+        if (shipment.is_delayed) {
+          const overdue = Math.abs(minutes);
+          return `${Math.ceil(overdue / 60)} saat gecikti`;
+        }
+        if (minutes < 60) return `${Math.max(0, minutes)} dk kaldı`;
+        return `${Math.ceil(minutes / 60)} saat kaldı`;
       },
     };
   }

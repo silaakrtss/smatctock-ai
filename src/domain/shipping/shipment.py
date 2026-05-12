@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -32,10 +32,16 @@ class Shipment:
     def is_delayed(self, now: datetime) -> bool:
         if self.status == ShipmentStatus.DELIVERED:
             return False
-        return now > self.expected_delivery_at
+        return _as_utc(now) > _as_utc(self.expected_delivery_at)
 
     def mark_delivered(self, at: datetime) -> None:
         if self.status == ShipmentStatus.DELIVERED:
             raise AlreadyDeliveredError(f"Shipment {self.id} already delivered")
         self.status = ShipmentStatus.DELIVERED
         self.delivered_at = at
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
