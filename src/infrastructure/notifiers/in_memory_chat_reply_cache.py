@@ -36,5 +36,3 @@ class InMemoryChatReplyCache(ChatReplyCache):
         expired = [mid for mid, entry in self._entries.items() if entry.expires_at <= now]
         for mid in expired:
             del self._entries[mid]
-
-

@@ -133,10 +133,7 @@ def _manager_task(*, shipment: Shipment, index: int) -> WorkflowTask:
         id=f"delay-{shipment.id}",
         role="manager",
         title=f"#{shipment.order_id} gecikmesine müdahale et",
-        detail=(
-            f"{shipment.carrier} kargosu gecikti; takip numarası "
-            f"{shipment.tracking_number}."
-        ),
+        detail=(f"{shipment.carrier} kargosu gecikti; takip numarası {shipment.tracking_number}."),
         priority="urgent" if index <= 3 else "high",
         related_order_id=shipment.order_id,
         tracking_number=shipment.tracking_number,

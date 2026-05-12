@@ -28,11 +28,7 @@ async def low_stock_items(
     scope: RequestScope = Depends(get_scope),
 ) -> list[InventoryItemRead]:
     items = await scope.stock.inventory_overview()
-    return [
-        InventoryItemRead.from_service(item)
-        for item in items
-        if item.status in {"low", "out"}
-    ]
+    return [InventoryItemRead.from_service(item) for item in items if item.status in {"low", "out"}]
 
 
 @router.post("/{product_id}/adjust", response_model=ProductRead)

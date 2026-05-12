@@ -56,7 +56,6 @@ class _FakeThresholdRepo(StockThresholdRepository):
         self._by_product[threshold.product_id] = threshold
 
 
-
 class _FakeNotificationRepo(NotificationRepository):
     def __init__(self) -> None:
         self.saved: list[Notification] = []

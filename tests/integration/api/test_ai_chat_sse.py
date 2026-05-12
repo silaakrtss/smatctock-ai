@@ -56,9 +56,7 @@ def test_ai_chat_publishes_and_caches_reply_when_message_id_given(stub_scope):
     publisher.publish.assert_awaited_once_with(
         message_id="abc-123", content="Domates stoğu 8 adet."
     )
-    cache.set.assert_awaited_once_with(
-        message_id="abc-123", content="Domates stoğu 8 adet."
-    )
+    cache.set.assert_awaited_once_with(message_id="abc-123", content="Domates stoğu 8 adet.")
 
 
 def test_ai_chat_skips_publish_when_no_message_id(stub_scope):

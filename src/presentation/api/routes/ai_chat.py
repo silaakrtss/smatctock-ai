@@ -41,9 +41,7 @@ async def ai_chat(
 
     if request.message_id:
         await scope.chat_reply_cache.set(message_id=request.message_id, content=answer)
-        await scope.chat_reply_publisher.publish(
-            message_id=request.message_id, content=answer
-        )
+        await scope.chat_reply_publisher.publish(message_id=request.message_id, content=answer)
 
     return AiChatResponse(answer=answer)
 

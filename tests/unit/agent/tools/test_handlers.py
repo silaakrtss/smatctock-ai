@@ -190,8 +190,9 @@ class TestGetProductStockHandler:
         assert payload["id"] == 1
         assert payload["name"] == "Domates"
         assert payload["stock"] == 5
-        # Eşik yoksa status/min_quantity eklenmez (FakeThresholdRepo boş döndürüyor)
-        assert "min_quantity" in payload or "status" in payload or True  # graceful
+        # Eşik yoksa ürün bilgisi yine gelir; stok durumu güvenli varsayılanla döner.
+        assert payload["min_quantity"] is None
+        assert payload["status"] == "ok"
 
 
 class TestListOrdersHandler:

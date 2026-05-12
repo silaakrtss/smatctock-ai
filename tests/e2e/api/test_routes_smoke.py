@@ -32,7 +32,4 @@ def test_orders_explorer_page_renders():
         response = client.get("/order-tracking")
 
         assert response.status_code == 200
-        assert (
-            "Sipari\u015f Takip" in response.text
-            or "Sipari\u00c5\u0178 Takip" in response.text
-        )
+        assert "Sipari\u015f Takip" in response.text or "Sipari\u00c5\u0178 Takip" in response.text
