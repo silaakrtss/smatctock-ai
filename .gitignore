@@ -34,6 +34,7 @@ data/
 
 # LLM çağrı logları (ADR-0005)
 logs_llm/
+*.log
 
 # IDE
 .idea/
