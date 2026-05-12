@@ -4,117 +4,180 @@
 
 {% block main %}
 <section class="space-y-6"
-         x-data="notificationStream()"
+         x-data="dashboardPanel()"
          x-init="start()"
          @beforeunload.window="stop()">
 
-  <div class="grid lg:grid-cols-3 gap-6">
-
-    <div class="lg:col-span-2 grid md:grid-cols-2 gap-6">
-
-      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
-               x-data="productList()" x-init="load()">
-        <div class="flex items-start justify-between gap-3 mb-3">
-          <div>
-            <h2 class="font-display text-lg text-harvest-700">Stok ve Envanter</h2>
-            <p class="text-xs text-harvest-500">Kritik eşikler, önerilen tedarik ve hızlı stok güncelleme.</p>
-          </div>
-          <span class="text-xs px-2 py-1 rounded-full bg-ember-500 text-white"
-                x-show="lowCount() > 0"
-                x-text="lowCount() + ' kritik'"></span>
+  <div class="relative overflow-hidden rounded-[1.5rem] bg-harvest-900 text-cream-50 shadow-xl">
+    <div class="absolute inset-y-0 right-0 w-1/2 opacity-20 dashboard-mesh"></div>
+    <div class="relative grid gap-6 lg:grid-cols-[1.35fr_1fr] px-6 py-7 md:px-8">
+      <div class="space-y-4">
+        <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-cream-100 ring-1 ring-white/15">
+          <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
+          Canlı operasyon görünümü
         </div>
+        <div>
+          <h1 class="font-display text-3xl md:text-4xl text-white">Akıllı stok ve sipariş kontrol merkezi</h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-cream-100">
+            Kritik stokları, önerilen tedarik miktarlarını, sipariş durumunu ve bildirimleri tek ekranda toplayan demo paneli.
+          </p>
+        </div>
+      </div>
 
-        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor...</p>
-        <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
-
-        <ul class="divide-y divide-harvest-100" x-show="!loading && !error">
-          <template x-for="p in products" :key="p.id">
-            <li class="py-3 space-y-2 text-sm">
-              <div class="flex justify-between gap-3">
-                <div>
-                  <div class="font-medium text-harvest-700" x-text="p.name"></div>
-                  <div class="text-xs text-harvest-500">
-                    Eşik: <span x-text="p.min_quantity ?? '-'"></span>
-                    <span x-show="p.suggested_reorder_quantity > 0">
-                      · Öneri: <span x-text="p.suggested_reorder_quantity"></span>
-                    </span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="font-semibold text-harvest-900" x-text="p.stock"></div>
-                  <span class="text-xs px-2 py-0.5 rounded-full"
-                        :class="stockBadgeClass(p.status)"
-                        x-text="stockLabel(p.status)"></span>
-                </div>
-              </div>
-              <div class="flex gap-2" x-show="p.status !== 'ok'">
-                <button type="button"
-                        class="text-xs px-3 py-1.5 rounded-md bg-harvest-700 text-white hover:bg-harvest-600 disabled:opacity-50"
-                        :disabled="p.busy"
-                        @click="createReorderDraft(p)">
-                  Tedarik taslağı
-                </button>
-                <button type="button"
-                        class="text-xs px-3 py-1.5 rounded-md border border-harvest-200 text-harvest-700 hover:bg-harvest-50 disabled:opacity-50"
-                        :disabled="p.busy"
-                        @click="adjustStock(p, p.suggested_reorder_quantity || p.min_quantity || 1)">
-                  Stoğa ekle
-                </button>
-              </div>
-            </li>
-          </template>
-          <template x-if="!loading && !error && products.length === 0">
-            <li class="py-2 text-sm text-harvest-500 italic">Ürün yok.</li>
-          </template>
-        </ul>
-      </article>
-
-      <article class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6"
-               x-data="orderList()" x-init="load()">
-        <h2 class="font-display text-lg text-harvest-700 mb-3">Siparişler</h2>
-
-        <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor...</p>
-        <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
-
-        <ul class="divide-y divide-harvest-100" x-show="!loading && !error">
-          <template x-for="o in orders" :key="o.id">
-            <li class="py-2 flex justify-between items-center text-sm">
-              <span class="text-harvest-700">
-                <span class="text-harvest-500">#</span><span x-text="o.id"></span>
-                · <span x-text="o.customer_name"></span>
-              </span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-harvest-50 text-harvest-700"
-                    x-text="statusLabel(o.status)"></span>
-            </li>
-          </template>
-          <template x-if="!loading && !error && orders.length === 0">
-            <li class="py-2 text-sm text-harvest-500 italic">Sipariş yok.</li>
-          </template>
-        </ul>
-      </article>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="dashboard-kpi bg-white/10 text-white ring-white/15">
+          <div class="text-xs text-cream-100">Kritik ürün</div>
+          <div class="mt-2 text-3xl font-display" x-text="lowCount()"></div>
+        </div>
+        <div class="dashboard-kpi bg-white/10 text-white ring-white/15">
+          <div class="text-xs text-cream-100">Bekleyen sipariş</div>
+          <div class="mt-2 text-3xl font-display" x-text="preparingCount()"></div>
+        </div>
+        <div class="dashboard-kpi bg-white/10 text-white ring-white/15">
+          <div class="text-xs text-cream-100">Tedarik önerisi</div>
+          <div class="mt-2 text-3xl font-display" x-text="totalSuggestedReorder()"></div>
+        </div>
+        <div class="dashboard-kpi bg-white/10 text-white ring-white/15">
+          <div class="text-xs text-cream-100">Bildirim</div>
+          <div class="mt-2 text-3xl font-display" x-text="notifications.length"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <aside class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
-      <h2 class="font-display text-lg text-harvest-700 mb-3">Canlı Bildirimler</h2>
-      <p class="text-xs mb-3" :class="connected ? 'text-harvest-500' : 'text-ember-600'">
-        <span x-text="connected ? 'SSE bağlantısı açık.' : 'Bağlantı kuruluyor...'"></span>
-      </p>
+  <div class="grid gap-6 xl:grid-cols-[1.35fr_.9fr]">
+    <article class="dashboard-panel"
+             :class="lowCount() > 0 ? 'dashboard-panel-alert' : ''">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="dashboard-eyebrow">Stok ve Envanter</p>
+          <h2 class="font-display text-2xl text-harvest-900">Kritik stok aksiyonları</h2>
+          <p class="mt-1 text-sm text-harvest-600">Eşik altındaki ürünler için otomatik öneri ve tedarik taslağı.</p>
+        </div>
+        <div class="flex gap-2">
+          <span class="dashboard-chip bg-emerald-50 text-emerald-700" x-show="lowCount() === 0">Stok dengede</span>
+          <span class="dashboard-chip bg-amber-50 text-amber-800" x-show="lowCount() > 0" x-text="lowCount() + ' ürün kritik'"></span>
+        </div>
+      </div>
 
-      <div class="space-y-1">
+      <p class="mt-5 text-sm text-harvest-500 italic" x-show="inventoryLoading">Yükleniyor...</p>
+      <p class="mt-5 text-sm text-ember-600" x-show="inventoryError" x-text="inventoryError"></p>
+
+      <div class="mt-5 grid gap-3" x-show="!inventoryLoading && !inventoryError">
+        <template x-for="p in products" :key="p.id">
+          <div class="inventory-row" :data-status="p.status">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="font-semibold text-harvest-900" x-text="p.name"></h3>
+                <span class="dashboard-chip" :class="stockBadgeClass(p.status)" x-text="stockLabel(p.status)"></span>
+              </div>
+              <div class="mt-2 h-2 overflow-hidden rounded-full bg-harvest-100">
+                <div class="h-full rounded-full transition-all"
+                     :class="stockBarClass(p.status)"
+                     :style="`width: ${stockPercent(p)}%`"></div>
+              </div>
+              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-harvest-500">
+                <span>Stok: <strong class="text-harvest-900" x-text="p.stock"></strong></span>
+                <span>Eşik: <strong class="text-harvest-900" x-text="p.min_quantity ?? '-'"></strong></span>
+                <span x-show="p.suggested_reorder_quantity > 0">
+                  Öneri: <strong class="text-ember-600" x-text="p.suggested_reorder_quantity"></strong>
+                </span>
+              </div>
+            </div>
+
+            <div class="flex shrink-0 flex-wrap gap-2 md:justify-end" x-show="p.status !== 'ok'">
+              <button type="button"
+                      class="dashboard-button-primary"
+                      :disabled="p.busy"
+                      @click="createReorderDraft(p)">
+                Tedarik taslağı
+              </button>
+              <button type="button"
+                      class="dashboard-button-secondary"
+                      :disabled="p.busy"
+                      @click="adjustStock(p, p.suggested_reorder_quantity || p.min_quantity || 1)">
+                Stoğa ekle
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="!inventoryLoading && !inventoryError && products.length === 0">
+          <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Ürün yok.</div>
+        </template>
+      </div>
+    </article>
+
+    <aside class="dashboard-panel">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="dashboard-eyebrow">Canlı Bildirimler</p>
+          <h2 class="font-display text-2xl text-harvest-900">Operasyon akışı</h2>
+        </div>
+        <span class="dashboard-chip" :class="connected ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'"
+              x-text="connected ? 'Bağlı' : 'Bağlanıyor'"></span>
+      </div>
+
+      <div class="mt-5 max-h-[32rem] space-y-3 overflow-y-auto pr-1">
         <template x-for="n in notifications" :key="n.id">
           <div class="notification-card" :data-status="n.status">
-            <div class="font-semibold text-harvest-700" x-text="n.subject"></div>
-            <div class="text-sm text-harvest-600" x-text="n.body"></div>
-            <div class="text-xs text-harvest-500 mt-1" x-text="n.channel + ' · ' + n.recipient"></div>
+            <div class="font-semibold text-harvest-800" x-text="n.subject"></div>
+            <div class="mt-1 text-sm text-harvest-600" x-text="n.body"></div>
+            <div class="mt-2 text-xs text-harvest-500" x-text="n.channel + ' · ' + n.recipient"></div>
           </div>
         </template>
         <template x-if="notifications.length === 0">
-          <p class="text-sm text-harvest-500 italic">Henüz bildirim yok.</p>
+          <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Henüz bildirim yok.</div>
         </template>
       </div>
     </aside>
   </div>
 
+  <div>
+    <article class="dashboard-panel">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p class="dashboard-eyebrow">Sipariş takibi</p>
+          <h2 class="font-display text-2xl text-harvest-900">Günün sipariş durumu</h2>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="rounded-lg bg-cream-50 px-3 py-2">
+            <div class="font-display text-lg text-harvest-900" x-text="preparingCount()"></div>
+            <div class="text-harvest-500">Hazırlık</div>
+          </div>
+          <div class="rounded-lg bg-sky-50 px-3 py-2">
+            <div class="font-display text-lg text-sky-800" x-text="shippingCount()"></div>
+            <div class="text-sky-700">Kargoda</div>
+          </div>
+          <div class="rounded-lg bg-emerald-50 px-3 py-2">
+            <div class="font-display text-lg text-emerald-800" x-text="deliveredCount()"></div>
+            <div class="text-emerald-700">Teslim</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="mt-5 text-sm text-harvest-500 italic" x-show="ordersLoading">Yükleniyor...</p>
+      <p class="mt-5 text-sm text-ember-600" x-show="ordersError" x-text="ordersError"></p>
+
+      <div class="mt-5 overflow-hidden rounded-xl border border-harvest-100" x-show="!ordersLoading && !ordersError">
+        <template x-for="o in orders" :key="o.id">
+          <div class="order-row">
+            <div>
+              <div class="font-semibold text-harvest-900">
+                <span class="text-harvest-500">#</span><span x-text="o.id"></span>
+                <span> · </span><span x-text="o.customer_name"></span>
+              </div>
+              <div class="text-xs text-harvest-500" x-text="formatDate(o.created_at)"></div>
+            </div>
+            <span class="dashboard-chip" :class="orderBadgeClass(o.status)" x-text="statusLabel(o.status)"></span>
+          </div>
+        </template>
+        <template x-if="!ordersLoading && !ordersError && orders.length === 0">
+          <div class="p-5 text-sm text-harvest-500">Sipariş yok.</div>
+        </template>
+      </div>
+    </article>
+  </div>
 </section>
 
 <script>
@@ -125,33 +188,117 @@
     cancelled: "İptal",
   };
 
-  function productList() {
+  function dashboardPanel() {
     return {
       products: [],
-      loading: true,
-      error: "",
-      lowCount() {
-        return this.products.filter((p) => p.status !== "ok").length;
+      orders: [],
+      notifications: [],
+      inventoryLoading: true,
+      ordersLoading: true,
+      inventoryError: "",
+      ordersError: "",
+      connected: false,
+      source: null,
+
+      async start() {
+        await Promise.all([this.loadInventory(), this.loadOrders(), this.loadNotifications()]);
+        this.openSource();
+        document.addEventListener("visibilitychange", this._onVisibility = () => {
+          if (document.visibilityState === "hidden") {
+            this.stop();
+          } else if (!this.source) {
+            this.openSource();
+          }
+        });
       },
-      stockLabel(status) {
-        return { ok: "Yeterli", low: "Eşik altı", out: "Tükendi" }[status] || status;
-      },
-      stockBadgeClass(status) {
-        if (status === "out") return "bg-ember-600 text-white";
-        if (status === "low") return "bg-ember-500 text-white";
-        return "bg-harvest-50 text-harvest-700";
-      },
-      async load() {
+
+      async loadInventory() {
         try {
           const res = await fetch("/inventory");
           if (!res.ok) throw new Error("HTTP " + res.status);
           this.products = (await res.json()).map((p) => ({ ...p, busy: false }));
         } catch (err) {
-          this.error = "Ürünler yüklenemedi.";
+          this.inventoryError = "Ürünler yüklenemedi.";
         } finally {
-          this.loading = false;
+          this.inventoryLoading = false;
         }
       },
+
+      async loadOrders() {
+        try {
+          const res = await fetch("/orders");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          this.orders = await res.json();
+        } catch (err) {
+          this.ordersError = "Siparişler yüklenemedi.";
+        } finally {
+          this.ordersLoading = false;
+        }
+      },
+
+      async loadNotifications() {
+        try {
+          const res = await fetch("/notifications");
+          if (res.ok) this.notifications = await res.json();
+        } catch (err) { /* sessiz */ }
+      },
+
+      lowCount() {
+        return this.products.filter((p) => p.status !== "ok").length;
+      },
+      preparingCount() {
+        return this.orders.filter((o) => o.status === "preparing").length;
+      },
+      shippingCount() {
+        return this.orders.filter((o) => o.status === "in_shipping").length;
+      },
+      deliveredCount() {
+        return this.orders.filter((o) => o.status === "delivered").length;
+      },
+      totalSuggestedReorder() {
+        return this.products.reduce((total, p) => total + (p.suggested_reorder_quantity || 0), 0);
+      },
+      stockPercent(product) {
+        const min = product.min_quantity || product.stock || 1;
+        return Math.max(6, Math.min(100, Math.round((product.stock / min) * 100)));
+      },
+      stockLabel(status) {
+        return { ok: "Yeterli", low: "Eşik altı", out: "Tükendi" }[status] || status;
+      },
+      stockBadgeClass(status) {
+        if (status === "out") return "bg-rose-50 text-rose-700";
+        if (status === "low") return "bg-amber-50 text-amber-800";
+        return "bg-emerald-50 text-emerald-700";
+      },
+      stockBarClass(status) {
+        if (status === "out") return "bg-rose-500";
+        if (status === "low") return "bg-amber-500";
+        return "bg-emerald-500";
+      },
+      statusLabel(value) {
+        return ORDER_STATUS_LABELS[value] || value;
+      },
+      orderBadgeClass(status) {
+        return {
+          preparing: "bg-amber-50 text-amber-800",
+          in_shipping: "bg-sky-50 text-sky-800",
+          delivered: "bg-emerald-50 text-emerald-700",
+          cancelled: "bg-slate-100 text-slate-600",
+        }[status] || "bg-harvest-50 text-harvest-700";
+      },
+      formatDate(value) {
+        try {
+          return new Intl.DateTimeFormat("tr-TR", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date(value));
+        } catch (err) {
+          return value;
+        }
+      },
+
       async adjustStock(product, delta) {
         product.busy = true;
         try {
@@ -161,13 +308,14 @@
             body: JSON.stringify({ delta }),
           });
           if (!res.ok) throw new Error("HTTP " + res.status);
-          await this.load();
+          await this.loadInventory();
         } catch (err) {
-          this.error = "Stok güncellenemedi.";
+          this.inventoryError = "Stok güncellenemedi.";
         } finally {
           product.busy = false;
         }
       },
+
       async createReorderDraft(product) {
         product.busy = true;
         try {
@@ -177,58 +325,13 @@
             body: JSON.stringify({ quantity: product.suggested_reorder_quantity || null }),
           });
           if (!res.ok) throw new Error("HTTP " + res.status);
+          const notification = await res.json();
+          this.notifications.unshift(notification);
         } catch (err) {
-          this.error = "Tedarik taslağı oluşturulamadı.";
+          this.inventoryError = "Tedarik taslağı oluşturulamadı.";
         } finally {
           product.busy = false;
         }
-      },
-    };
-  }
-
-  function orderList() {
-    return {
-      orders: [],
-      loading: true,
-      error: "",
-      statusLabel(value) {
-        return ORDER_STATUS_LABELS[value] || value;
-      },
-      async load() {
-        try {
-          const res = await fetch("/orders");
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          this.orders = await res.json();
-        } catch (err) {
-          this.error = "Siparişler yüklenemedi.";
-        } finally {
-          this.loading = false;
-        }
-      },
-    };
-  }
-
-  function notificationStream() {
-    return {
-      notifications: [],
-      connected: false,
-      source: null,
-
-      async start() {
-        try {
-          const res = await fetch("/notifications");
-          if (res.ok) this.notifications = await res.json();
-        } catch (err) { /* sessiz */ }
-
-        this.openSource();
-
-        document.addEventListener("visibilitychange", this._onVisibility = () => {
-          if (document.visibilityState === "hidden") {
-            this.stop();
-          } else if (!this.source) {
-            this.openSource();
-          }
-        });
       },
 
       openSource() {
@@ -239,6 +342,7 @@
           try {
             const payload = JSON.parse(e.data);
             if (payload.type && payload.type !== "notification") return;
+            if (this.notifications.some((n) => n.id === payload.id)) return;
             this.notifications.unshift(payload);
             if (this.notifications.length > 20) this.notifications.length = 20;
           } catch (err) { /* sessiz */ }

@@ -4,83 +4,137 @@
 
 {% block main %}
 <section class="space-y-6"
-         x-data="orderTracking()" x-init="init()">
+         x-data="orderTracking()"
+         x-init="init()">
 
-  <div class="bg-white border border-harvest-100 rounded-2xl shadow-sm p-6">
-    <h1 class="font-display text-2xl text-harvest-700 mb-4">Sipariş Takip</h1>
+  <div class="relative overflow-hidden rounded-[1.5rem] bg-white shadow-xl ring-1 ring-harvest-100">
+    <div class="absolute inset-y-0 left-0 w-2 bg-ember-500"></div>
+    <div class="grid gap-6 p-6 md:p-8 lg:grid-cols-[1.2fr_.8fr]">
+      <div>
+        <p class="dashboard-eyebrow">Sipariş Takip</p>
+        <h1 class="mt-2 font-display text-3xl md:text-4xl text-harvest-900">Sipariş ve stok görünürlüğü</h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-harvest-600">
+          Sipariş numarasıyla hızlı sorgu yap, aktif işleri filtrele ve stok durumunu aynı ekranda izle.
+        </p>
+      </div>
 
-    <div class="mb-4">
-      <p class="text-sm text-harvest-600 mb-2">Belirli bir siparişi sorgula:</p>
-      <form class="flex gap-2" @submit.prevent="lookupOne()">
-        <input type="number"
-               x-model="lookupId"
-               min="1"
-               placeholder="örn. 101"
-               class="flex-1 px-4 py-3 border border-harvest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-harvest-500">
-        <button type="submit"
-                class="px-5 py-3 bg-ember-500 hover:bg-ember-600 text-white rounded-xl font-medium">
-          Sorgula
-        </button>
-      </form>
-
-      <template x-if="lookupResult">
-        <div class="mt-3 p-3 bg-harvest-50 rounded-xl text-sm">
-          <span class="text-harvest-500">#</span><span x-text="lookupResult.id"></span>
-          · <span x-text="lookupResult.customer_name"></span>
-          · <span class="font-medium" x-text="statusLabel(lookupResult.status)"></span>
+      <form class="rounded-2xl border border-harvest-100 bg-cream-50 p-4" @submit.prevent="lookupOne()">
+        <label for="order-id" class="text-xs font-bold uppercase tracking-wide text-harvest-600">Sipariş sorgula</label>
+        <div class="mt-3 flex gap-2">
+          <input id="order-id"
+                 type="number"
+                 x-model="lookupId"
+                 min="1"
+                 placeholder="örn. 101"
+                 class="min-w-0 flex-1 rounded-xl border border-harvest-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-harvest-500">
+          <button type="submit" class="dashboard-button-primary px-5">
+            Sorgula
+          </button>
         </div>
-      </template>
-      <p class="mt-3 text-sm text-ember-600" x-show="lookupError" x-text="lookupError"></p>
+        <p class="mt-3 text-sm text-ember-600" x-show="lookupError" x-text="lookupError"></p>
+      </form>
     </div>
+  </div>
 
-    <div class="border-t border-harvest-100 pt-4">
-      <div class="flex gap-2 mb-4" role="tablist">
+  <template x-if="lookupResult">
+    <article class="tracking-result">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-harvest-500">Sorgu sonucu</p>
+        <div class="mt-1 font-display text-2xl text-harvest-900">
+          <span class="text-harvest-500">#</span><span x-text="lookupResult.id"></span>
+          <span> · </span><span x-text="lookupResult.customer_name"></span>
+        </div>
+        <div class="mt-1 text-sm text-harvest-500" x-text="formatDate(lookupResult.created_at)"></div>
+      </div>
+      <span class="dashboard-chip" :class="orderBadgeClass(lookupResult.status)" x-text="statusLabel(lookupResult.status)"></span>
+    </article>
+  </template>
+
+  <div class="grid gap-4 md:grid-cols-4">
+    <div class="tracking-kpi">
+      <div class="text-xs text-harvest-500">Toplam sipariş</div>
+      <div class="mt-2 font-display text-3xl text-harvest-900" x-text="allOrders.length"></div>
+    </div>
+    <div class="tracking-kpi">
+      <div class="text-xs text-harvest-500">Hazırlanıyor</div>
+      <div class="mt-2 font-display text-3xl text-amber-700" x-text="countByStatus('preparing')"></div>
+    </div>
+    <div class="tracking-kpi">
+      <div class="text-xs text-harvest-500">Kargoda</div>
+      <div class="mt-2 font-display text-3xl text-sky-800" x-text="countByStatus('in_shipping')"></div>
+    </div>
+    <div class="tracking-kpi">
+      <div class="text-xs text-harvest-500">Teslim edildi</div>
+      <div class="mt-2 font-display text-3xl text-emerald-700" x-text="countByStatus('delivered')"></div>
+    </div>
+  </div>
+
+  <div class="dashboard-panel">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="dashboard-eyebrow">Operasyon listesi</p>
+        <h2 class="font-display text-2xl text-harvest-900">Canlı takip ekranı</h2>
+      </div>
+      <div class="tracking-tabs" role="tablist">
         <template x-for="t in tabs" :key="t.key">
           <button type="button"
                   @click="selectTab(t.key)"
-                  :class="tab === t.key
-                    ? 'bg-harvest-700 text-cream-50'
-                    : 'bg-harvest-50 text-harvest-700 hover:bg-harvest-100'"
-                  class="px-4 py-2 rounded-xl text-sm font-medium transition">
+                  :class="tab === t.key ? 'is-active' : ''">
             <span x-text="t.label"></span>
           </button>
         </template>
       </div>
+    </div>
 
-      <p class="text-sm text-harvest-500 italic" x-show="loading">Yükleniyor…</p>
-      <p class="text-sm text-ember-600" x-show="error" x-text="error"></p>
+    <p class="mt-5 text-sm text-harvest-500 italic" x-show="loading">Yükleniyor...</p>
+    <p class="mt-5 text-sm text-ember-600" x-show="error" x-text="error"></p>
 
-      <div x-show="!loading && !error && tab === 'stock'">
-        <ul class="divide-y divide-harvest-100">
-          <template x-for="p in products" :key="p.id">
-            <li class="py-2 flex justify-between text-sm">
-              <span class="text-harvest-700" x-text="p.name"></span>
-              <span class="font-medium" x-text="p.stock"></span>
-            </li>
-          </template>
-          <template x-if="products.length === 0">
-            <li class="py-2 text-sm text-harvest-500 italic">Ürün yok.</li>
-          </template>
-        </ul>
-      </div>
+    <div class="mt-5 grid gap-3" x-show="!loading && !error && tab === 'stock'">
+      <template x-for="p in products" :key="p.id">
+        <div class="tracking-stock-row" :data-status="p.status || 'ok'">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-semibold text-harvest-900" x-text="p.name"></h3>
+              <span class="dashboard-chip" :class="stockBadgeClass(p.status || 'ok')" x-text="stockLabel(p.status || 'ok')"></span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-harvest-100">
+              <div class="h-full rounded-full"
+                   :class="stockBarClass(p.status || 'ok')"
+                   :style="`width: ${stockPercent(p)}%`"></div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-display text-2xl text-harvest-900" x-text="p.stock"></div>
+            <div class="text-xs text-harvest-500">
+              Eşik <span x-text="p.min_quantity ?? '-'"></span>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template x-if="products.length === 0">
+        <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Ürün yok.</div>
+      </template>
+    </div>
 
-      <div x-show="!loading && !error && tab !== 'stock'">
-        <ul class="divide-y divide-harvest-100">
-          <template x-for="o in orders" :key="o.id">
-            <li class="py-2 flex justify-between items-center text-sm">
-              <span class="text-harvest-700">
+    <div class="mt-5 grid gap-3" x-show="!loading && !error && tab !== 'stock'">
+      <template x-for="o in orders" :key="o.id">
+        <div class="tracking-order-row">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="tracking-avatar" x-text="initials(o.customer_name)"></div>
+            <div class="min-w-0">
+              <div class="font-semibold text-harvest-900">
                 <span class="text-harvest-500">#</span><span x-text="o.id"></span>
-                · <span x-text="o.customer_name"></span>
-              </span>
-              <span class="text-xs px-2 py-0.5 rounded-full bg-harvest-50 text-harvest-700"
-                    x-text="statusLabel(o.status)"></span>
-            </li>
-          </template>
-          <template x-if="orders.length === 0">
-            <li class="py-2 text-sm text-harvest-500 italic">Sipariş yok.</li>
-          </template>
-        </ul>
-      </div>
+                <span> · </span><span x-text="o.customer_name"></span>
+              </div>
+              <div class="text-xs text-harvest-500" x-text="formatDate(o.created_at)"></div>
+            </div>
+          </div>
+          <span class="dashboard-chip" :class="orderBadgeClass(o.status)" x-text="statusLabel(o.status)"></span>
+        </div>
+      </template>
+      <template x-if="orders.length === 0">
+        <div class="rounded-lg border border-dashed border-harvest-200 p-5 text-sm text-harvest-500">Sipariş yok.</div>
+      </template>
     </div>
   </div>
 </section>
@@ -98,25 +152,31 @@
   function orderTracking() {
     return {
       tabs: [
-        { key: "stock", label: "📦 Stok" },
-        { key: "live", label: "🚚 Anlık" },
-        { key: "history", label: "📜 Geçmiş" },
+        { key: "stock", label: "Stok" },
+        { key: "live", label: "Anlık" },
+        { key: "history", label: "Geçmiş" },
       ],
       tab: "stock",
       products: [],
       orders: [],
+      allOrders: [],
       loading: false,
       error: "",
       lookupId: "",
       lookupResult: null,
       lookupError: "",
 
-      statusLabel(value) {
-        return ORDER_STATUS_LABELS[value] || value;
+      async init() {
+        await this.loadAllOrders();
+        await this.selectTab("stock");
       },
 
-      init() {
-        this.selectTab("stock");
+      async loadAllOrders() {
+        try {
+          this.allOrders = await this.fetchJson("/orders");
+        } catch (err) {
+          this.allOrders = [];
+        }
       },
 
       async selectTab(key) {
@@ -125,7 +185,7 @@
         this.loading = true;
         try {
           if (key === "stock") {
-            this.products = await this.fetchJson("/products");
+            this.products = await this.fetchJson("/inventory");
           } else if (key === "live") {
             this.orders = await this.fetchActiveOrders();
           } else if (key === "history") {
@@ -145,7 +205,7 @@
       },
 
       async fetchActiveOrders() {
-        const requests = ACTIVE_STATUSES.map(s => this.fetchJson("/orders?status=" + s));
+        const requests = ACTIVE_STATUSES.map((s) => this.fetchJson("/orders?status=" + s));
         const groups = await Promise.all(requests);
         return groups.flat();
       },
@@ -164,6 +224,53 @@
           this.lookupResult = await res.json();
         } catch (err) {
           this.lookupError = "Sorgu başarısız.";
+        }
+      },
+
+      countByStatus(status) {
+        return this.allOrders.filter((o) => o.status === status).length;
+      },
+      statusLabel(value) {
+        return ORDER_STATUS_LABELS[value] || value;
+      },
+      orderBadgeClass(status) {
+        return {
+          preparing: "bg-amber-50 text-amber-800",
+          in_shipping: "bg-sky-50 text-sky-800",
+          delivered: "bg-emerald-50 text-emerald-700",
+          cancelled: "bg-slate-100 text-slate-600",
+        }[status] || "bg-harvest-50 text-harvest-700";
+      },
+      stockLabel(status) {
+        return { ok: "Yeterli", low: "Eşik altı", out: "Tükendi" }[status] || status;
+      },
+      stockBadgeClass(status) {
+        if (status === "out") return "bg-rose-50 text-rose-700";
+        if (status === "low") return "bg-amber-50 text-amber-800";
+        return "bg-emerald-50 text-emerald-700";
+      },
+      stockBarClass(status) {
+        if (status === "out") return "bg-rose-500";
+        if (status === "low") return "bg-amber-500";
+        return "bg-emerald-500";
+      },
+      stockPercent(product) {
+        const min = product.min_quantity || product.stock || 1;
+        return Math.max(6, Math.min(100, Math.round((product.stock / min) * 100)));
+      },
+      initials(name) {
+        return String(name || "?").trim().slice(0, 1).toUpperCase();
+      },
+      formatDate(value) {
+        try {
+          return new Intl.DateTimeFormat("tr-TR", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date(value));
+        } catch (err) {
+          return value;
         }
       },
     };
